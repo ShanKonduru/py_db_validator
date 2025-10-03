@@ -88,21 +88,21 @@ pytest tests/test_sqlserver_connector.py -v
 
 ```bash
 # Create and activate virtual environment (Windows)
-001_env.bat
-002_activate.bat
+scripts\001_env.bat
+scripts\002_activate.bat
 
 # Install dependencies
-003_setup.bat
+scripts\003_setup.bat
 ```
 
 ### 2. Run Tests
 
 ```bash
 # Run all tests
-005_run_test.bat
+scripts\005_run_test.bat
 
 # Run with coverage analysis
-005_run_code_cov.bat
+scripts\005_run_code_cov.bat
 
 # Generate coverage summary
 python coverage_summary.py
@@ -244,18 +244,22 @@ pytest tests/ --cov=src --cov-report=html
 
 ## 🧰 **Development Tools**
 
-### Batch Scripts (Windows)
+### Cross-Platform Scripts
+
+All scripts are now located in the `scripts/` folder with both Windows (`.bat`) and Linux/Mac (`.sh`) versions:
 
 ```bash
-000_init.bat          # Initialize git and config
-001_env.bat           # Create virtual environment  
-002_activate.bat      # Activate environment
-003_setup.bat         # Install dependencies
-004_run.bat           # Run main application
-005_run_test.bat      # Run pytest tests
-005_run_code_cov.bat  # Run with coverage
-008_deactivate.bat    # Deactivate environment
+scripts/000_init.*         # Initialize git and config
+scripts/001_env.*          # Create virtual environment  
+scripts/002_activate.*     # Activate environment
+scripts/003_setup.*        # Install dependencies
+scripts/004_run.*          # Run main application
+scripts/005_run_test.*     # Run pytest tests
+scripts/005_run_code_cov.* # Run with coverage
+scripts/008_deactivate.*   # Deactivate environment
 ```
+
+**See `scripts/README.md` for detailed usage instructions for each platform.**
 
 ### Configuration Files
 
