@@ -7,4 +7,5 @@ pytest-xdist
 oracledb
 pyodbc
 psycopg2
+python-dotenv
 

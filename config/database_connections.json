@@ -1,0 +1,386 @@
+{
+  "metadata": {
+    "config_version": "1.0",
+    "created_date": "2025-10-03",
+    "description": "Database connection configuration for multi-environment, multi-application setup",
+    "supported_environments": ["DEV", "QA", "ACC", "NP1", "PRE_PROD"],
+    "supported_applications": {
+      "RED": "Oracle Database",
+      "MREE": "Oracle Database", 
+      "SADB": "Oracle Database",
+      "TPS": "PostgreSQL Database",
+      "MDW": "SQL Server Database"
+    }
+  },
+  "environments": {
+    "DEV": {
+      "name": "Development",
+      "description": "Development environment for testing and development",
+      "applications": {
+        "RED": {
+          "db_type": "oracle",
+          "host": "dev-oracle-red.company.com",
+          "port": 1521,
+          "service_name": "REDDEV",
+          "schema": "RED_SCHEMA",
+          "username_env_var": "DEV_RED_USERNAME",
+          "password_env_var": "DEV_RED_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 5
+        },
+        "MREE": {
+          "db_type": "oracle",
+          "host": "dev-oracle-mree.company.com", 
+          "port": 1521,
+          "service_name": "MREEDEV",
+          "schema": "MREE_SCHEMA",
+          "username_env_var": "DEV_MREE_USERNAME",
+          "password_env_var": "DEV_MREE_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 5
+        },
+        "SADB": {
+          "db_type": "oracle",
+          "host": "dev-oracle-sadb.company.com",
+          "port": 1521,
+          "service_name": "SADBDEV",
+          "schema": "SADB_SCHEMA",
+          "username_env_var": "DEV_SADB_USERNAME",
+          "password_env_var": "DEV_SADB_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 5
+        },
+        "TPS": {
+          "db_type": "postgresql",
+          "host": "dev-postgres-tps.company.com",
+          "port": 5432,
+          "database": "tps_dev",
+          "schema": "public",
+          "username_env_var": "DEV_TPS_USERNAME",
+          "password_env_var": "DEV_TPS_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 10
+        },
+        "MDW": {
+          "db_type": "sqlserver",
+          "host": "dev-sqlserver-mdw.company.com",
+          "port": 1433,
+          "database": "MDW_DEV",
+          "schema": "dbo",
+          "username_env_var": "DEV_MDW_USERNAME",
+          "password_env_var": "DEV_MDW_PASSWORD",
+          "driver": "ODBC Driver 17 for SQL Server",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 10
+        }
+      }
+    },
+    "QA": {
+      "name": "Quality Assurance", 
+      "description": "QA environment for testing and validation",
+      "applications": {
+        "RED": {
+          "db_type": "oracle",
+          "host": "qa-oracle-red.company.com",
+          "port": 1521,
+          "service_name": "REDQA",
+          "schema": "RED_SCHEMA",
+          "username_env_var": "QA_RED_USERNAME",
+          "password_env_var": "QA_RED_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 8
+        },
+        "MREE": {
+          "db_type": "oracle",
+          "host": "qa-oracle-mree.company.com",
+          "port": 1521,
+          "service_name": "MREEQA",
+          "schema": "MREE_SCHEMA", 
+          "username_env_var": "QA_MREE_USERNAME",
+          "password_env_var": "QA_MREE_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 8
+        },
+        "SADB": {
+          "db_type": "oracle",
+          "host": "qa-oracle-sadb.company.com",
+          "port": 1521,
+          "service_name": "SADBQA",
+          "schema": "SADB_SCHEMA",
+          "username_env_var": "QA_SADB_USERNAME",
+          "password_env_var": "QA_SADB_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 8
+        },
+        "TPS": {
+          "db_type": "postgresql",
+          "host": "qa-postgres-tps.company.com",
+          "port": 5432,
+          "database": "tps_qa",
+          "schema": "public",
+          "username_env_var": "QA_TPS_USERNAME",
+          "password_env_var": "QA_TPS_PASSWORD",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 12
+        },
+        "MDW": {
+          "db_type": "sqlserver",
+          "host": "qa-sqlserver-mdw.company.com",
+          "port": 1433,
+          "database": "MDW_QA",
+          "schema": "dbo",
+          "username_env_var": "QA_MDW_USERNAME",
+          "password_env_var": "QA_MDW_PASSWORD",
+          "driver": "ODBC Driver 17 for SQL Server",
+          "connection_timeout": 30,
+          "query_timeout": 300,
+          "max_connections": 12
+        }
+      }
+    },
+    "ACC": {
+      "name": "Acceptance",
+      "description": "Acceptance environment for user acceptance testing",
+      "applications": {
+        "RED": {
+          "db_type": "oracle",
+          "host": "acc-oracle-red.company.com",
+          "port": 1521,
+          "service_name": "REDACC",
+          "schema": "RED_SCHEMA",
+          "username_env_var": "ACC_RED_USERNAME",
+          "password_env_var": "ACC_RED_PASSWORD",
+          "connection_timeout": 45,
+          "query_timeout": 600,
+          "max_connections": 10
+        },
+        "MREE": {
+          "db_type": "oracle",
+          "host": "acc-oracle-mree.company.com",
+          "port": 1521,
+          "service_name": "MREEACC",
+          "schema": "MREE_SCHEMA",
+          "username_env_var": "ACC_MREE_USERNAME", 
+          "password_env_var": "ACC_MREE_PASSWORD",
+          "connection_timeout": 45,
+          "query_timeout": 600,
+          "max_connections": 10
+        },
+        "SADB": {
+          "db_type": "oracle",
+          "host": "acc-oracle-sadb.company.com",
+          "port": 1521,
+          "service_name": "SADBACC",
+          "schema": "SADB_SCHEMA",
+          "username_env_var": "ACC_SADB_USERNAME",
+          "password_env_var": "ACC_SADB_PASSWORD",
+          "connection_timeout": 45,
+          "query_timeout": 600,
+          "max_connections": 10
+        },
+        "TPS": {
+          "db_type": "postgresql",
+          "host": "acc-postgres-tps.company.com",
+          "port": 5432,
+          "database": "tps_acc",
+          "schema": "public",
+          "username_env_var": "ACC_TPS_USERNAME",
+          "password_env_var": "ACC_TPS_PASSWORD",
+          "connection_timeout": 45,
+          "query_timeout": 600,
+          "max_connections": 15
+        },
+        "MDW": {
+          "db_type": "sqlserver",
+          "host": "acc-sqlserver-mdw.company.com",
+          "port": 1433,
+          "database": "MDW_ACC",
+          "schema": "dbo",
+          "username_env_var": "ACC_MDW_USERNAME",
+          "password_env_var": "ACC_MDW_PASSWORD",
+          "driver": "ODBC Driver 17 for SQL Server",
+          "connection_timeout": 45,
+          "query_timeout": 600,
+          "max_connections": 15
+        }
+      }
+    },
+    "NP1": {
+      "name": "Non-Production 1",
+      "description": "Performance testing and load testing environment",
+      "applications": {
+        "RED": {
+          "db_type": "oracle",
+          "host": "np1-oracle-red.company.com",
+          "port": 1521,
+          "service_name": "REDNP1",
+          "schema": "RED_SCHEMA",
+          "username_env_var": "NP1_RED_USERNAME",
+          "password_env_var": "NP1_RED_PASSWORD",
+          "connection_timeout": 60,
+          "query_timeout": 900,
+          "max_connections": 20
+        },
+        "MREE": {
+          "db_type": "oracle",
+          "host": "np1-oracle-mree.company.com",
+          "port": 1521,
+          "service_name": "MREENP1",
+          "schema": "MREE_SCHEMA",
+          "username_env_var": "NP1_MREE_USERNAME",
+          "password_env_var": "NP1_MREE_PASSWORD",
+          "connection_timeout": 60,
+          "query_timeout": 900,
+          "max_connections": 20
+        },
+        "SADB": {
+          "db_type": "oracle",
+          "host": "np1-oracle-sadb.company.com",
+          "port": 1521,
+          "service_name": "SADBNP1",
+          "schema": "SADB_SCHEMA",
+          "username_env_var": "NP1_SADB_USERNAME",
+          "password_env_var": "NP1_SADB_PASSWORD",
+          "connection_timeout": 60,
+          "query_timeout": 900,
+          "max_connections": 20
+        },
+        "TPS": {
+          "db_type": "postgresql",
+          "host": "np1-postgres-tps.company.com",
+          "port": 5432,
+          "database": "tps_np1",
+          "schema": "public",
+          "username_env_var": "NP1_TPS_USERNAME",
+          "password_env_var": "NP1_TPS_PASSWORD",
+          "connection_timeout": 60,
+          "query_timeout": 900,
+          "max_connections": 25
+        },
+        "MDW": {
+          "db_type": "sqlserver",
+          "host": "np1-sqlserver-mdw.company.com",
+          "port": 1433,
+          "database": "MDW_NP1",
+          "schema": "dbo",
+          "username_env_var": "NP1_MDW_USERNAME",
+          "password_env_var": "NP1_MDW_PASSWORD",
+          "driver": "ODBC Driver 17 for SQL Server",
+          "connection_timeout": 60,
+          "query_timeout": 900,
+          "max_connections": 25
+        }
+      }
+    },
+    "PRE_PROD": {
+      "name": "Pre-Production",
+      "description": "Production-like environment for final testing before production release",
+      "applications": {
+        "RED": {
+          "db_type": "oracle",
+          "host": "preprod-oracle-red.company.com",
+          "port": 1521,
+          "service_name": "REDPREPROD",
+          "schema": "RED_SCHEMA",
+          "username_env_var": "PREPROD_RED_USERNAME",
+          "password_env_var": "PREPROD_RED_PASSWORD",
+          "connection_timeout": 90,
+          "query_timeout": 1800,
+          "max_connections": 30
+        },
+        "MREE": {
+          "db_type": "oracle",
+          "host": "preprod-oracle-mree.company.com",
+          "port": 1521,
+          "service_name": "MREEPREPROD",
+          "schema": "MREE_SCHEMA",
+          "username_env_var": "PREPROD_MREE_USERNAME",
+          "password_env_var": "PREPROD_MREE_PASSWORD",
+          "connection_timeout": 90,
+          "query_timeout": 1800,
+          "max_connections": 30
+        },
+        "SADB": {
+          "db_type": "oracle",
+          "host": "preprod-oracle-sadb.company.com",
+          "port": 1521,
+          "service_name": "SADBPREPROD",
+          "schema": "SADB_SCHEMA",
+          "username_env_var": "PREPROD_SADB_USERNAME",
+          "password_env_var": "PREPROD_SADB_PASSWORD",
+          "connection_timeout": 90,
+          "query_timeout": 1800,
+          "max_connections": 30
+        },
+        "TPS": {
+          "db_type": "postgresql",
+          "host": "preprod-postgres-tps.company.com",
+          "port": 5432,
+          "database": "tps_preprod",
+          "schema": "public",
+          "username_env_var": "PREPROD_TPS_USERNAME",
+          "password_env_var": "PREPROD_TPS_PASSWORD",
+          "connection_timeout": 90,
+          "query_timeout": 1800,
+          "max_connections": 40
+        },
+        "MDW": {
+          "db_type": "sqlserver",
+          "host": "preprod-sqlserver-mdw.company.com",
+          "port": 1433,
+          "database": "MDW_PREPROD",
+          "schema": "dbo",
+          "username_env_var": "PREPROD_MDW_USERNAME",
+          "password_env_var": "PREPROD_MDW_PASSWORD",
+          "driver": "ODBC Driver 17 for SQL Server",
+          "connection_timeout": 90,
+          "query_timeout": 1800,
+          "max_connections": 40
+        }
+      }
+    }
+  },
+  "connection_defaults": {
+    "oracle": {
+      "port": 1521,
+      "connection_timeout": 30,
+      "query_timeout": 300,
+      "max_connections": 10,
+      "driver_options": {
+        "encoding": "UTF-8",
+        "nencoding": "UTF-8",
+        "autocommit": false
+      }
+    },
+    "postgresql": {
+      "port": 5432,
+      "connection_timeout": 30,
+      "query_timeout": 300,
+      "max_connections": 15,
+      "driver_options": {
+        "autocommit": false,
+        "connect_timeout": 10
+      }
+    },
+    "sqlserver": {
+      "port": 1433,
+      "connection_timeout": 30,
+      "query_timeout": 300,
+      "max_connections": 15,
+      "driver": "ODBC Driver 17 for SQL Server",
+      "driver_options": {
+        "TrustServerCertificate": "yes",
+        "Encrypt": "yes"
+      }
+    }
+  }
+}
