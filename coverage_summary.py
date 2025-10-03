@@ -44,11 +44,15 @@ for marker in markers:
 
 print("\n=== 🎯 TEST EXECUTION EXAMPLES ===")
 examples = [
-    "pytest tests/ -m 'unit'           # Run all unit tests",
-    "pytest tests/ -m 'positive'       # Run positive cases only",
-    "pytest tests/ -m 'edge'           # Run edge cases only",
-    "pytest tests/ -m 'not negative'   # Run all except negative cases",
-    "pytest tests/ --cov=src           # Run with coverage"
+    "pytest tests/ -m 'unit'                    # Run all unit tests",
+    "pytest tests/ -m 'positive'                # Run positive cases only",
+    "pytest tests/ -m 'edge'                    # Run edge cases only", 
+    "pytest tests/ -m 'not negative'            # Run all except negative cases",
+    "pytest tests/ --cov=src                    # Run with coverage",
+    "scripts/005_run_test.bat (Windows)         # Run tests via script",
+    "scripts/005_run_code_cov.bat (Windows)     # Run coverage via script",
+    "./scripts/005_run_test.sh (Linux/Mac)      # Run tests via script",
+    "./scripts/005_run_code_cov.sh (Linux/Mac)  # Run coverage via script"
 ]
 
 for example in examples:
@@ -60,3 +64,5 @@ print(f"  ✅ {coverage_percent}% code coverage")
 print("  ✅ Comprehensive pytest markers")
 print("  ✅ HTML coverage report generated")
 print("  ✅ Clean database connector architecture")
+print("  ✅ Cross-platform scripts (Windows, Linux, Mac)")
+print("  ✅ Organized scripts in dedicated folder")
