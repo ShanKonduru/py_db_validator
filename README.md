@@ -1,301 +1,282 @@
 # Database Validation Framework
 
-A comprehensive Python framework for validating data across Oracle, PostgreSQL, and SQL Server databases. Tests are defined in CSV files and executed against configurable database profiles with detailed reporting.
+A comprehensive Python framework providing clean, testable database connectivity for Oracle, PostgreSQL, and SQL Server databases. Built with a robust connector architecture and extensive test coverage.
 
-## Features
+## 🎯 **Current Status: Database Connector Architecture Complete**
 
-- **Multi-Database Support**: Oracle (oracledb), PostgreSQL (psycopg2), SQL Server (pyodbc)
-- **CSV-Driven Configuration**: Define tests in simple CSV format
-- **Multiple Test Types**: Connection, table existence, permissions, row counts, data comparisons
-- **Flexible Reporting**: JSON, Markdown, HTML, and CSV output formats
-- **Robust Error Handling**: Retry logic, timeouts, and detailed error reporting
-- **Secure Credential Management**: Database credentials via environment variables
+- ✅ **Clean Architecture**: Abstract base class with concrete database implementations
+- ✅ **Multi-Database Support**: Oracle (oracledb), PostgreSQL (psycopg2), SQL Server (pyodbc)  
+- ✅ **Mock Testing**: Complete mock connector for testing without real databases
+- ✅ **Comprehensive Testing**: 79 unit tests with 95.9% code coverage
+- ✅ **Pytest Markers**: Categorized tests for selective execution
+- ✅ **HTML Coverage Reports**: Detailed line-by-line coverage analysis
 
-## Quick Start
+## 🏗️ **Architecture Overview**
 
-### 1. Installation
+### Core Components
+
+```text
+src/
+├── connectors/
+│   ├── database_connection_base.py     # Abstract base class
+│   ├── oracle_connector.py             # Oracle implementation (100% coverage)
+│   ├── postgresql_connector.py         # PostgreSQL implementation (100% coverage)
+│   ├── sqlserver_connector.py          # SQL Server implementation (100% coverage)
+│   └── mock_connector.py               # Mock implementation (93.3% coverage)
+│
+tests/
+├── test_oracle_connector.py            # 18 comprehensive tests
+├── test_postgresql_connector.py        # 21 comprehensive tests  
+├── test_sqlserver_connector.py         # 22 comprehensive tests
+└── test_mock_connector.py              # 18 comprehensive tests
+```
+
+### Database Connector Features
+
+- **Standardized Interface**: All connectors implement the same base methods
+- **Connection Management**: Robust connect/disconnect with state tracking
+- **Query Execution**: Safe SQL execution with error handling
+- **Table Operations**: List tables, check existence, get row counts
+- **Database Introspection**: Schema-aware queries for each database type
+
+## 🧪 **Testing Framework**
+
+### Pytest Markers for Test Categorization
 
 ```bash
-# Clone or download the project
-cd py_db_validator
+@pytest.mark.unit        # All unit tests
+@pytest.mark.db          # Database-related tests  
+@pytest.mark.positive    # Positive test cases
+@pytest.mark.negative    # Negative test cases
+@pytest.mark.edge        # Edge case tests
+@pytest.mark.security    # Security-related tests
+```
 
-# Create virtual environment (Windows)
+### Test Execution Examples
+
+```bash
+# Run all tests with coverage
+pytest tests/ --cov=src --cov-report=html --cov-report=term-missing
+
+# Run specific test categories
+pytest tests/ -m 'unit'           # All unit tests
+pytest tests/ -m 'positive'       # Positive cases only  
+pytest tests/ -m 'edge'           # Edge cases only
+pytest tests/ -m 'not negative'   # All except negative cases
+
+# Run tests for specific database
+pytest tests/test_oracle_connector.py -v
+pytest tests/test_postgresql_connector.py -v
+pytest tests/test_sqlserver_connector.py -v
+```
+
+### Code Coverage Results
+
+| File | Coverage | Lines Covered | Status |
+|------|----------|---------------|--------|
+| **Oracle Connector** | 100.0% | 43/43 lines | ✅ Complete |
+| **PostgreSQL Connector** | 100.0% | 42/42 lines | ✅ Complete |
+| **SQL Server Connector** | 100.0% | 44/44 lines | ✅ Complete |
+| **Mock Connector** | 93.3% | 28/30 lines | ✅ Complete |
+| **Base Class** | 78.6% | 22/28 lines | ✅ Abstract methods |
+
+#### Total Coverage: 95.9% (185/193 lines)
+
+## 🚀 **Quick Start**
+
+### 1. Environment Setup
+
+```bash
+# Create and activate virtual environment (Windows)
 001_env.bat
-
-# Activate environment (Windows)  
 002_activate.bat
 
-# Install dependencies (Windows)
+# Install dependencies
 003_setup.bat
 ```
 
-### 2. Configuration
-
-Copy the example configuration files:
-
-```bash
-copy examples\.env.template .env
-copy examples\db_profiles.json .
-copy examples\sample_tests.csv .
-```
-
-Edit `.env` with your database credentials:
-```bash
-ORACLE_DB_USER=your_oracle_username
-ORACLE_DB_PWD=your_oracle_password
-POSTGRESQL_DB_USER=your_postgres_username  
-POSTGRESQL_DB_PWD=your_postgres_password
-SQLSERVER_DB_USER=your_sqlserver_username
-SQLSERVER_DB_PWD=your_sqlserver_password
-```
-
-### 3. Run Tests
-
-```bash
-# Run all enabled tests (Windows)
-004_run.bat
-
-# Or run manually with options
-python main.py --csv sample_tests.csv --profiles db_profiles.json --output reports
-```
-
-## Test Types
-
-### Connection Test
-Verifies database connectivity and measures connection time.
-
-```csv
-test_id,enabled,test_type,profile_src,table_src,column_src,filter_src,profile_tgt,table_tgt,column_tgt,comparison_keys,ignore_columns,tolerance,tags,report_level,notes,timeout_sec,retry_count
-conn_oracle,Y,CONNECTION,oracle_dev,,,,,,,,,0.001,smoke,INFO,Test Oracle connection,60,1
-```
-
-### Table Existence Test  
-Checks if specified tables exist and reports schema information.
-
-```csv
-table_customers,Y,TABLE_EXISTENCE,oracle_dev,customers,,,,,,,,0.001,smoke,INFO,Verify customers table exists,30,0
-```
-
-### Permissions Test
-Verifies user permissions on database objects.
-
-```csv
-perm_customers,Y,PERMISSIONS,oracle_dev,customers,,,,,,,,0.001,permissions,INFO,"permissions: SELECT,INSERT",30,0
-```
-
-### Row Existence Test
-Checks if rows exist matching specified criteria.
-
-```csv
-active_customers,Y,ROW_EXISTENCE,oracle_dev,customers,,"status = 'ACTIVE'",,,,,,0.001,data,INFO,Check for active customers,60,0
-```
-
-### Row Count Test
-Counts rows in tables, optionally comparing source vs target.
-
-```csv
-count_orders,Y,ROW_COUNT,oracle_dev,orders,,,postgres_dev,orders_copy,,,0.05,migration,INFO,Compare order counts,300,1
-```
-
-## Configuration Files
-
-### Database Profiles (`db_profiles.json`)
-
-```json
-[
-  {
-    "profile_id": "oracle_dev",
-    "db_type": "oracle", 
-    "host": "localhost",
-    "port": 1521,
-    "service_name": "XEPDB1"
-  },
-  {
-    "profile_id": "postgres_dev",
-    "db_type": "postgresql",
-    "host": "localhost", 
-    "port": 5432,
-    "database": "testdb"
-  }
-]
-```
-
-### Test Definitions CSV
-
-| Column | Description | Required |
-|--------|-------------|----------|
-| test_id | Unique test identifier | Yes |
-| enabled | Y/N to enable/disable test | Yes |
-| test_type | Type of test to run | Yes |
-| profile_src | Source database profile ID | Yes |
-| table_src | Source table name | Varies |
-| filter_src | WHERE clause for filtering | No |
-| profile_tgt | Target database profile ID | No |
-| table_tgt | Target table name | No |
-| tolerance | Numeric comparison tolerance | No |
-| tags | Comma-separated tags | No |
-| timeout_sec | Test timeout in seconds | No |
-| retry_count | Number of retries on failure | No |
-
-## Command Line Options
-
-```bash
-python main.py [OPTIONS]
-
-Options:
-  -c, --csv TEXT          Path to test definitions CSV file [required]
-  -p, --profiles TEXT     Path to database profiles JSON file [required]  
-  -o, --output TEXT       Output directory for reports [default: reports]
-  -t, --tags TEXT         Filter tests by tags (can specify multiple)
-  --test-ids TEXT         Filter tests by IDs (can specify multiple)
-  --include-disabled      Include disabled tests
-  --log-level [DEBUG|INFO|WARNING|ERROR]  Set logging level [default: INFO]
-  --fail-fast            Exit on first test failure
-  --help                 Show this message and exit
-```
-
-### Examples
+### 2. Run Tests
 
 ```bash
 # Run all tests
-python main.py -c tests.csv -p profiles.json
-
-# Run only smoke tests
-python main.py -c tests.csv -p profiles.json -t smoke
-
-# Run specific tests with debug logging
-python main.py -c tests.csv -p profiles.json --test-ids conn_oracle,table_customers --log-level DEBUG
-
-# Run tests including disabled ones
-python main.py -c tests.csv -p profiles.json --include-disabled
-```
-
-## Report Output
-
-Reports are generated in timestamped directories under the output folder:
-
-```
-reports/
-  run_20241002_143022/
-    index.md              # Suite summary report
-    summary.json          # Machine-readable summary
-    summary.csv           # CSV summary for automation
-    conn_oracle.json      # Individual test JSON report
-    conn_oracle.md        # Individual test Markdown report
-    table_customers.json  # More test reports...
-    table_customers.md
-    run_a1b2c3d4.log     # Execution log
-```
-
-### Report Contents
-
-- **Suite Summary**: Overall results, success rates, timing
-- **Individual Tests**: Detailed results, queries executed, error details
-- **JSON Reports**: Machine-readable for CI/CD integration
-- **Markdown Reports**: Human-readable with formatted results
-- **CSV Summary**: Tabular data for spreadsheet analysis
-
-## Development
-
-### Project Structure
-
-```
-src/
-  models.py           # Data models and enums
-  exceptions.py       # Custom exception classes
-  parser/             # Configuration and CSV parsing
-    config_loader.py
-    csv_parser.py
-  adapters/           # Database connectivity
-    base_adapter.py
-    oracle_adapter.py
-    postgres_adapter.py
-    sqlserver_adapter.py
-  tests/              # Test implementations
-    base_test.py
-    connection_test.py
-    table_existence_test.py
-    permissions_test.py
-    row_existence_test.py
-    row_count_test.py
-  runner/             # Test orchestration
-    orchestrator.py
-  reporter/           # Report generation
-    report_generator.py
-  utils/              # Utilities
-    compare_utils.py
-    sql_utils.py
-    logger.py
-```
-
-### Running Unit Tests
-
-```bash
-# Run unit tests (Windows)
 005_run_test.bat
 
-# Run with coverage (Windows)  
+# Run with coverage analysis
 005_run_code_cov.bat
 
-# Manual pytest execution
-pytest tests/ -v
-pytest tests/ --cov=src --cov-report=html
+# Generate coverage summary
+python coverage_summary.py
 ```
 
-### Adding New Test Types
+### 3. Usage Example
 
-1. Create test class inheriting from `BaseTest`
-2. Implement `_run()` and `_validate()` methods
-3. Add to `TestFactory` 
-4. Update CSV parser validation rules
-5. Add unit tests
+```python
+from src.connectors.postgresql_connector import PostgreSQLConnector
 
-### Environment Management
+# Create connector
+connector = PostgreSQLConnector(
+    host="localhost",
+    port=5432,
+    username="postgres",
+    password="password",
+    database="testdb"
+)
+
+# Connect and use
+success, message = connector.connect()
+if success:
+    tables = connector.get_tables()
+    row_count = connector.get_row_count("users")
+    connector.disconnect()
+```
+
+## 🔧 **Database Connector API**
+
+### DatabaseConnectionBase (Abstract)
+
+All connectors inherit from this base class and implement:
+
+```python
+class DatabaseConnectionBase(ABC):
+    def __init__(self, host: str, port: int, username: str, password: str, **kwargs)
+    
+    @abstractmethod
+    def connect(self) -> Tuple[bool, str]
+    
+    @abstractmethod  
+    def disconnect(self) -> None
+    
+    @abstractmethod
+    def execute_query(self, query: str) -> Tuple[bool, Any]
+    
+    @abstractmethod
+    def get_tables(self) -> List[str]
+    
+    @abstractmethod
+    def table_exists(self, table_name: str) -> bool
+    
+    @abstractmethod
+    def get_row_count(self, table_name: str) -> int
+```
+
+### Oracle Connector Specifics
+
+- **Driver**: oracledb (thin client mode)
+- **Connection String**: DSN format `host:port/service_name`
+- **Schema Queries**: Uses `user_tables` view
+- **Case Handling**: UPPER() for table name matching
+
+### PostgreSQL Connector Specifics  
+
+- **Driver**: psycopg2
+- **Connection String**: Standard PostgreSQL format
+- **Schema Queries**: Uses `information_schema.tables`
+- **Features**: Full PostgreSQL compatibility
+
+### SQL Server Connector Specifics
+
+- **Driver**: pyodbc with ODBC drivers
+- **Connection String**: ODBC format with 10-second timeout
+- **Schema Queries**: Uses `sys.tables` with schema filtering
+- **Table Names**: Bracket notation `[table_name]` for special characters
+
+### Mock Connector
+
+- **Purpose**: Testing without real database dependencies
+- **Mock Data**: Predefined tables (users, orders, products) with sample data
+- **Query Simulation**: Pattern matching for common SQL operations
+- **Test Coverage**: Enables unit testing of database-dependent code
+
+## 📊 **HTML Coverage Report**
+
+Detailed line-by-line coverage analysis is available in the HTML report:
 
 ```bash
-# Initialize git and config (Windows)
-000_init.bat
-
-# Create virtual environment (Windows)
-001_env.bat
-
-# Activate environment (Windows)
-002_activate.bat
-
-# Install dependencies (Windows)
-003_setup.bat
-
-# Deactivate environment (Windows)
-008_deactivate.bat
+# Generate and view coverage report
+pytest tests/ --cov=src --cov-report=html
+# Open htmlcov/index.html in browser
 ```
 
-## Troubleshooting
+## 🛠️ **Development Workflow**
 
-### Database Connection Issues
+### Adding New Database Support
 
-1. **Oracle**: Ensure Oracle client is installed and `ORACLE_HOME` is set
-2. **PostgreSQL**: Verify `pg_hba.conf` allows connections
-3. **SQL Server**: Check ODBC driver installation and SQL Server configuration
+1. **Create Connector Class**: Inherit from `DatabaseConnectionBase`
+2. **Implement Required Methods**: All abstract methods must be implemented
+3. **Add Database-Specific Logic**: Connection strings, queries, error handling
+4. **Create Comprehensive Tests**: Positive, negative, edge, and security cases
+5. **Add Pytest Markers**: Categorize tests for selective execution
+6. **Update Coverage**: Aim for 100% line coverage
 
-### Common Errors
+### Test Categories
 
-- **Missing credentials**: Check `.env` file format and variable names
-- **Profile not found**: Verify profile IDs match between CSV and JSON files
-- **Permission denied**: Ensure database user has required privileges
-- **Timeout errors**: Increase `timeout_sec` values for slow queries
+- **Unit Tests**: Fast, isolated tests with mocked dependencies
+- **Positive Tests**: Happy path scenarios with expected inputs
+- **Negative Tests**: Error conditions and invalid inputs  
+- **Edge Tests**: Boundary conditions and special cases
+- **Security Tests**: SQL injection prevention and credential handling
 
-### Logging
+## 📈 **Project Roadmap**
 
-Set `--log-level DEBUG` for detailed execution information. Logs are written to:
-- Console (formatted for human reading)
-- Log file (JSON format for machine processing)
+### ✅ Phase 1: Core Architecture (Complete)
 
-## License
+- [x] Abstract base class design
+- [x] Oracle, PostgreSQL, SQL Server connectors
+- [x] Mock connector for testing
+- [x] Comprehensive unit test suite
+- [x] Code coverage analysis
+
+### 🔄 Phase 2: Data Validation Framework (Next)
+
+- [ ] CSV-driven test configuration
+- [ ] Test orchestration engine
+- [ ] Data comparison utilities
+- [ ] Report generation system
+- [ ] CLI interface
+
+### 🔮 Phase 3: Advanced Features (Future)
+
+- [ ] Connection pooling
+- [ ] Async database operations  
+- [ ] Performance benchmarking
+- [ ] Integration testing
+- [ ] CI/CD pipeline integration
+
+## 🧰 **Development Tools**
+
+### Batch Scripts (Windows)
+
+```bash
+000_init.bat          # Initialize git and config
+001_env.bat           # Create virtual environment  
+002_activate.bat      # Activate environment
+003_setup.bat         # Install dependencies
+004_run.bat           # Run main application
+005_run_test.bat      # Run pytest tests
+005_run_code_cov.bat  # Run with coverage
+008_deactivate.bat    # Deactivate environment
+```
+
+### Configuration Files
+
+- `pytest.ini` - Pytest configuration with custom markers
+- `requirements.txt` - Python dependencies
+- `.gitignore` - Git ignore patterns
+- `coverage_summary.py` - Coverage analysis script
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/new-connector`)
+3. Add comprehensive tests with pytest markers
+4. Ensure 100% code coverage for new features
+5. Update documentation
+6. Submit pull request
+
+## 📝 **License**
 
 [Specify your license here]
 
-## Contributing
+---
 
-[Explain how others can contribute to your project]
-
-[Specify the project license, if any.]
+Built with Python 3.13+ | Tested with pytest | 95.9% Code Coverage

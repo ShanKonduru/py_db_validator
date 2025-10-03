@@ -3,3 +3,8 @@ pytest-html
 pytest-cov
 pytest-mock
 pytest-xdist
+
+oracledb
+pyodbc
+psycopg2
+
