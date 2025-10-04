@@ -342,6 +342,11 @@ class ReportGenerator:
         skipped_tests = sum(1 for r in test_results if r.status == "SKIP")
         success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
         
+        # Calculate percentages safely
+        passed_pct = (passed_tests/total_tests*100) if total_tests > 0 else 0.0
+        failed_pct = (failed_tests/total_tests*100) if total_tests > 0 else 0.0  
+        skipped_pct = (skipped_tests/total_tests*100) if total_tests > 0 else 0.0
+        
         markdown_content = f"""# {'Multi-Sheet ' if multi_sheet else ''}Test Execution Report
 
 **Excel File:** `{excel_file}`  
@@ -353,9 +358,9 @@ class ReportGenerator:
 | Metric | Count | Percentage |
 |--------|-------|------------|
 | **Total Tests** | {total_tests} | 100.0% |
-| **✅ Passed** | {passed_tests} | {(passed_tests/total_tests*100):.1f}% |
-| **❌ Failed** | {failed_tests} | {(failed_tests/total_tests*100):.1f}% |
-| **⏭️ Skipped** | {skipped_tests} | {(skipped_tests/total_tests*100):.1f}% |
+| **✅ Passed** | {passed_tests} | {passed_pct:.1f}% |
+| **❌ Failed** | {failed_tests} | {failed_pct:.1f}% |
+| **⏭️ Skipped** | {skipped_tests} | {skipped_pct:.1f}% |
 
 **Overall Success Rate:** {success_rate:.1f}%
 
