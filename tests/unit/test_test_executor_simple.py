@@ -42,6 +42,7 @@ class TestTestExecutorSimple(unittest.TestCase):
     @pytest.mark.positive
     @pytest.mark.functional
     @pytest.mark.test_execution
+    @patch('src.core.test_executor.TestPostgreSQLSmoke')
     def test_execute_test_case_returns_result(self, mock_smoke_class):
         """Test that execute_test_case returns a TestResult"""
         # Mock the smoke test class
