@@ -226,6 +226,15 @@ class ExcelTestSuiteReader:
 
     def get_all_test_cases(self) -> List[TestCase]:
         """Get all test cases"""
+        # Load data if not already loaded
+        if not self.test_cases and not self.workbook:
+            if not self.load_workbook():
+                return []
+            if not self.validate_structure():
+                return []
+            if not self.read_test_cases():
+                return []
+        
         return self.test_cases
 
     def get_enabled_test_cases(self) -> List[TestCase]:

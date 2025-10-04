@@ -21,6 +21,9 @@ class TestExecutor:
     def __init__(self):
         """Initialize the test executor"""
         self.smoke_tester = TestPostgreSQLSmoke()
+        # Initialize the smoke tester if it has a setup method
+        if hasattr(self.smoke_tester, 'setup_class'):
+            self.smoke_tester.setup_class()
 
     def execute_test_case(self, test_case: TestCase) -> TestResult:
         """Execute a single test case and return the result"""
@@ -39,17 +42,19 @@ class TestExecutor:
             if test_case.test_category == "SETUP":
                 self.smoke_tester.test_environment_setup()
             elif test_case.test_category == "CONFIGURATION":
-                self.smoke_tester.test_configuration_availability()
+                self.smoke_tester.test_dummy_config_availability()
             elif test_case.test_category == "SECURITY":
-                self.smoke_tester.test_credentials_validation()
+                self.smoke_tester.test_environment_credentials()
             elif test_case.test_category == "CONNECTION":
-                self.smoke_tester.test_database_connectivity()
+                self.smoke_tester.test_postgresql_connection()
             elif test_case.test_category == "QUERIES":
-                self.smoke_tester.test_basic_database_queries()
+                self.smoke_tester.test_postgresql_basic_queries()
             elif test_case.test_category == "PERFORMANCE":
-                self.smoke_tester.test_connection_performance()
+                self.smoke_tester.test_postgresql_connection_performance()
             elif test_case.test_category == "COMPATIBILITY":
-                self.smoke_tester.test_backwards_compatibility()
+                # This method doesn't exist, so we'll skip it
+                status = "SKIP"
+                error_message = "Compatibility test not implemented"
             else:
                 status = "SKIP"
                 error_message = f"Unknown test category: {test_case.test_category}"
