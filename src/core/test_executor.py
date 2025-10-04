@@ -58,6 +58,14 @@ class TestExecutor:
                 # This method doesn't exist, so we'll skip it
                 status = "SKIP"
                 error_message = "Compatibility test not implemented"
+            elif test_case.test_category == "TABLE_EXISTS":
+                self._execute_table_exists_test(test_case)
+            elif test_case.test_category == "TABLE_SELECT":
+                self._execute_table_select_test(test_case)
+            elif test_case.test_category == "TABLE_ROWS":
+                self._execute_table_rows_test(test_case)
+            elif test_case.test_category == "TABLE_STRUCTURE":
+                self._execute_table_structure_test(test_case)
             elif test_case.test_category == "SCHEMA_VALIDATION":
                 result = self._execute_data_validation_test(test_case)
                 if not result.passed:
@@ -188,3 +196,143 @@ class TestExecutor:
                 params[key.strip()] = value.strip()
         
         return params
+    
+    def _execute_table_exists_test(self, test_case):
+        """Execute table existence validation"""
+        params = self._parse_test_params(test_case.parameters)
+        table_name = params.get('table_name') or test_case.parameters
+        if not table_name:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, "TABLE_EXISTS test requires table_name parameter")
+        
+        try:
+            # Use the data validator to check if table exists
+            # For now, we'll check by trying to get table info
+            result = self.data_validator.db_connection.execute_query(f"SELECT 1 FROM {table_name} LIMIT 1")
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(True, f"Table '{table_name}' exists")
+        except Exception as e:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, f"Table '{table_name}' does not exist: {str(e)}")
+    
+    def _execute_table_select_test(self, test_case):
+        """Execute table select validation"""
+        params = self._parse_test_params(test_case.parameters)
+        table_name = params.get('table_name') or test_case.parameters
+        if not table_name:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, "TABLE_SELECT test requires table_name parameter")
+        
+        try:
+            # Try to select from the table
+            result = self.data_validator.db_connection.execute_query(f"SELECT * FROM {table_name} LIMIT 1")
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(True, f"Successfully selected from table '{table_name}'")
+        except Exception as e:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, f"Failed to select from table '{table_name}': {str(e)}")
+    
+    def _execute_table_rows_test(self, test_case):
+        """Execute table row count validation"""
+        params = self._parse_test_params(test_case.parameters)
+        table_name = params.get('table_name') or test_case.parameters
+        expected_count = params.get('expected_count')
+        min_count = params.get('min_count')
+        max_count = params.get('max_count')
+        
+        if not table_name:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, "TABLE_ROWS test requires table_name parameter")
+        
+        try:
+            # Get row count
+            result = self.data_validator.db_connection.execute_query(f"SELECT COUNT(*) as row_count FROM {table_name}")
+            if result and len(result) > 0:
+                actual_count = result[0].get('row_count', 0)
+                
+                # Check various count conditions
+                if expected_count is not None:
+                    expected = int(expected_count)
+                    if actual_count == expected:
+                        from src.validators.data_validator import ValidationResult
+                        return ValidationResult(True, f"Table '{table_name}' has expected {expected} rows")
+                    else:
+                        from src.validators.data_validator import ValidationResult
+                        return ValidationResult(False, f"Table '{table_name}' has {actual_count} rows, expected {expected}")
+                
+                if min_count is not None and max_count is not None:
+                    min_c = int(min_count)
+                    max_c = int(max_count)
+                    if min_c <= actual_count <= max_c:
+                        from src.validators.data_validator import ValidationResult
+                        return ValidationResult(True, f"Table '{table_name}' has {actual_count} rows (within range {min_c}-{max_c})")
+                    else:
+                        from src.validators.data_validator import ValidationResult
+                        return ValidationResult(False, f"Table '{table_name}' has {actual_count} rows (outside range {min_c}-{max_c})")
+                
+                if min_count is not None:
+                    min_c = int(min_count)
+                    if actual_count >= min_c:
+                        from src.validators.data_validator import ValidationResult
+                        return ValidationResult(True, f"Table '{table_name}' has {actual_count} rows (>= {min_c})")
+                    else:
+                        from src.validators.data_validator import ValidationResult
+                        return ValidationResult(False, f"Table '{table_name}' has {actual_count} rows (< {min_c})")
+                
+                # Default: just return the count
+                from src.validators.data_validator import ValidationResult
+                return ValidationResult(True, f"Table '{table_name}' has {actual_count} rows")
+            else:
+                from src.validators.data_validator import ValidationResult
+                return ValidationResult(False, f"Could not get row count for table '{table_name}'")
+        except Exception as e:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, f"Failed to count rows in table '{table_name}': {str(e)}")
+    
+    def _execute_table_structure_test(self, test_case):
+        """Execute table structure validation"""
+        params = self._parse_test_params(test_case.parameters)
+        table_name = params.get('table_name') or test_case.parameters
+        expected_columns = params.get('expected_columns')
+        
+        if not table_name:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, "TABLE_STRUCTURE test requires table_name parameter")
+        
+        try:
+            # Get table structure information
+            # This is database-specific, for PostgreSQL we can use information_schema
+            structure_query = """
+                SELECT column_name, data_type, is_nullable, column_default
+                FROM information_schema.columns 
+                WHERE table_name = %s
+                ORDER BY ordinal_position
+            """
+            result = self.data_validator.db_connection.execute_query(structure_query, (table_name,))
+            
+            if result:
+                columns = [row['column_name'] for row in result]
+                structure_info = f"Table '{table_name}' has columns: {', '.join(columns)}"
+                
+                if expected_columns:
+                    expected_cols = [col.strip() for col in expected_columns.split(',')]
+                    missing_cols = set(expected_cols) - set(columns)
+                    extra_cols = set(columns) - set(expected_cols)
+                    
+                    if missing_cols or extra_cols:
+                        error_msg = f"Table structure mismatch for '{table_name}'"
+                        if missing_cols:
+                            error_msg += f", Missing columns: {', '.join(missing_cols)}"
+                        if extra_cols:
+                            error_msg += f", Extra columns: {', '.join(extra_cols)}"
+                        from src.validators.data_validator import ValidationResult
+                        return ValidationResult(False, error_msg)
+                
+                from src.validators.data_validator import ValidationResult
+                return ValidationResult(True, structure_info)
+            else:
+                from src.validators.data_validator import ValidationResult
+                return ValidationResult(False, f"Could not get structure for table '{table_name}'")
+        except Exception as e:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, f"Failed to get structure for table '{table_name}': {str(e)}")
