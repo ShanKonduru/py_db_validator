@@ -3,6 +3,7 @@
 Comprehensive unit tests for Excel test suite reader
 """
 import unittest
+import pytest
 import tempfile
 import os
 from unittest.mock import patch, Mock, MagicMock
@@ -81,6 +82,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         
         workbook.save(self.test_file)
 
+    @pytest.mark.positive
+    @pytest.mark.initialization
+    @pytest.mark.excel_processing
     def test_reader_initialization(self):
         """Test ExcelTestSuiteReader initialization"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -88,11 +92,17 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         self.assertEqual(str(reader.excel_file), self.test_file)
         self.assertEqual(reader.sheet_name, 'SMOKE')
 
+    @pytest.mark.positive
+    @pytest.mark.initialization
+    @pytest.mark.configuration
     def test_reader_initialization_with_custom_sheet(self):
         """Test ExcelTestSuiteReader initialization with custom sheet name"""
         reader = ExcelTestSuiteReader(self.test_file, 'CUSTOM')
         self.assertEqual(reader.sheet_name, 'CUSTOM')
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.file_handling
     def test_validate_file_exists(self):
         """Test file existence validation"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -102,6 +112,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         reader_invalid = ExcelTestSuiteReader('nonexistent.xlsx')
         self.assertFalse(reader_invalid.validate_file_exists())
 
+    @pytest.mark.positive
+    @pytest.mark.excel_processing
+    @pytest.mark.file_handling
     def test_load_workbook_success(self):
         """Test successful workbook loading"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -111,6 +124,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         self.assertIsNotNone(reader.workbook)
         self.assertIn('SMOKE', reader.workbook.sheetnames)
 
+    @pytest.mark.negative
+    @pytest.mark.excel_processing
+    @pytest.mark.edge_case
     def test_load_workbook_missing_sheet(self):
         """Test workbook loading with missing sheet"""
         reader = ExcelTestSuiteReader(self.test_file, 'NONEXISTENT')
@@ -118,6 +134,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         
         self.assertFalse(result)
 
+    @pytest.mark.negative
+    @pytest.mark.excel_processing
+    @pytest.mark.edge_case
     def test_load_workbook_invalid_file(self):
         """Test workbook loading with invalid file"""
         invalid_file = os.path.join(self.temp_dir, 'invalid.txt')
@@ -132,6 +151,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         # Clean up
         os.remove(invalid_file)
 
+    @pytest.mark.positive
+    @pytest.mark.excel_processing
+    @pytest.mark.data_reading
     def test_read_test_cases_success(self):
         """Test successful test case reading"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -140,6 +162,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         result = reader.read_test_cases()
         self.assertTrue(result)
 
+    @pytest.mark.positive
+    @pytest.mark.excel_processing
+    @pytest.mark.data_reading
     def test_read_test_cases_with_sheet_name(self):
         """Test reading test cases with specific sheet name"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -148,6 +173,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         result = reader.read_test_cases()  # read_test_cases() doesn't take sheet name parameter
         self.assertTrue(result)
 
+    @pytest.mark.positive
+    @pytest.mark.data_reading
+    @pytest.mark.test_cases
     def test_get_all_test_cases(self):
         """Test getting all test cases"""
         reader = ExcelTestSuiteReader(self.test_file)

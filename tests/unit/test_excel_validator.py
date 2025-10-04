@@ -3,6 +3,7 @@
 Comprehensive unit tests for Excel validator
 """
 import unittest
+import pytest
 import tempfile
 import os
 from unittest.mock import patch, Mock
@@ -95,12 +96,18 @@ class TestExcelValidator(unittest.TestCase):
         
         workbook.save(self.invalid_file)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.initialization
     def test_validator_initialization(self):
         """Test ExcelTestSuiteValidator initialization"""
         validator = ExcelTestSuiteValidator()
         self.assertIsNotNone(validator)
         self.assertEqual(len(validator.validation_messages), 0)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.excel_processing
     def test_validate_test_suite_valid_file(self):
         """Test validate_test_suite with valid file"""
         validator = ExcelTestSuiteValidator()
@@ -114,6 +121,9 @@ class TestExcelValidator(unittest.TestCase):
         error_messages = [msg for msg in messages if msg.severity == ValidationSeverity.ERROR]
         self.assertEqual(len(error_messages), 0, f"Unexpected errors: {[msg.message for msg in error_messages]}")
 
+    @pytest.mark.negative
+    @pytest.mark.validation
+    @pytest.mark.excel_processing
     def test_validate_test_suite_invalid_file(self):
         """Test validate_test_suite with invalid file"""
         validator = ExcelTestSuiteValidator()
@@ -128,6 +138,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertGreater(len(error_messages), 0)
         self.assertFalse(is_valid)
 
+    @pytest.mark.negative
+    @pytest.mark.validation
+    @pytest.mark.edge_case
     def test_validate_test_suite_missing_sheet(self):
         """Test validate_test_suite with missing sheet"""
         validator = ExcelTestSuiteValidator()
@@ -142,6 +155,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertGreater(len(messages), 0)
         self.assertIn('not found', messages[0].message)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.data_structures
     def test_validation_message_structure(self):
         """Test ValidationMessage structure"""
         message = ValidationMessage(
@@ -162,12 +178,18 @@ class TestExcelValidator(unittest.TestCase):
         self.assertEqual(message.current_value, 'current')
         self.assertEqual(message.suggested_value, 'suggested')
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.enums
     def test_validation_severity_enum(self):
         """Test ValidationSeverity enum values"""
         self.assertEqual(ValidationSeverity.ERROR.value, "ERROR")
         self.assertEqual(ValidationSeverity.WARNING.value, "WARNING")
         self.assertEqual(ValidationSeverity.INFO.value, "INFO")
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.constants
     def test_validator_constants(self):
         """Test validator constants are properly defined"""
         validator = ExcelTestSuiteValidator()
@@ -191,6 +213,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertIn('PASS', validator.VALID_EXPECTED_RESULTS)
         self.assertIn('FAIL', validator.VALID_EXPECTED_RESULTS)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.headers
     def test_required_headers_structure(self):
         """Test required headers structure"""
         validator = ExcelTestSuiteValidator()
@@ -203,6 +228,9 @@ class TestExcelValidator(unittest.TestCase):
         
         self.assertEqual(validator.REQUIRED_HEADERS, expected_headers)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.constraints
     def test_timeout_constraints(self):
         """Test timeout constraints"""
         validator = ExcelTestSuiteValidator()
@@ -210,6 +238,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertEqual(validator.MIN_TIMEOUT_SECONDS, 5)
         self.assertEqual(validator.MAX_TIMEOUT_SECONDS, 3600)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.constraints
     def test_length_constraints(self):
         """Test length constraints"""
         validator = ExcelTestSuiteValidator()
@@ -217,6 +248,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertEqual(validator.MAX_DESCRIPTION_LENGTH, 500)
         self.assertEqual(validator.MAX_PREREQUISITES_LENGTH, 1000)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.categories
     def test_valid_test_categories(self):
         """Test valid test categories mapping"""
         validator = ExcelTestSuiteValidator()
@@ -231,6 +265,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertEqual(validator.VALID_TEST_CATEGORIES['SETUP'], 'test_environment_setup')
         self.assertEqual(validator.VALID_TEST_CATEGORIES['CONNECTION'], 'test_postgresql_connection')
 
+    @pytest.mark.negative
+    @pytest.mark.validation
+    @pytest.mark.edge_case
     def test_empty_workbook_handling(self):
         """Test handling of empty workbook"""
         validator = ExcelTestSuiteValidator()
@@ -244,6 +281,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertFalse(is_valid)
         self.assertGreater(len(messages), 0)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.functional
     def test_multiple_validation_runs(self):
         """Test that validator can be reused for multiple validations"""
         validator = ExcelTestSuiteValidator()
@@ -261,6 +301,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertEqual(is_valid1, is_valid2)
         self.assertEqual(len(messages1), len(messages2))
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.messages
     def test_validation_messages_collection(self):
         """Test that validation messages are properly collected"""
         validator = ExcelTestSuiteValidator()
@@ -278,6 +321,9 @@ class TestExcelValidator(unittest.TestCase):
             self.assertIsInstance(message, ValidationMessage)
             self.assertIsInstance(message.severity, ValidationSeverity)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.boolean_logic
     def test_boolean_values_validation(self):
         """Test boolean values validation"""
         validator = ExcelTestSuiteValidator()
@@ -292,6 +338,9 @@ class TestExcelValidator(unittest.TestCase):
         self.assertIn(1, valid_boolean_values)
         self.assertIn(0, valid_boolean_values)
 
+    @pytest.mark.negative
+    @pytest.mark.validation
+    @pytest.mark.edge_case
     def test_edge_cases(self):
         """Test edge cases and error conditions"""
         validator = ExcelTestSuiteValidator()
@@ -300,6 +349,9 @@ class TestExcelValidator(unittest.TestCase):
         with self.assertRaises(AttributeError):
             validator.validate_test_suite(None, 'SMOKE')
 
+    @pytest.mark.performance
+    @pytest.mark.validation
+    @pytest.mark.excel_processing
     def test_large_dataset_validation(self):
         """Test validation with larger dataset"""
         # Create file with many test cases

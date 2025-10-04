@@ -3,6 +3,7 @@
 Comprehensive unit tests for Excel template generator
 """
 import unittest
+import pytest
 import tempfile
 import os
 from unittest.mock import patch, Mock, MagicMock
@@ -25,12 +26,18 @@ class TestExcelTemplateGenerator(unittest.TestCase):
             os.remove(self.template_path)
         os.rmdir(self.temp_dir)
 
+    @pytest.mark.positive
+    @pytest.mark.initialization
+    @pytest.mark.template_generation
     def test_init(self):
         """Test ExcelTemplateGenerator initialization"""
         generator = ExcelTemplateGenerator()
         # Test that initialization doesn't raise errors
         self.assertIsNotNone(generator)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.excel_processing
     def test_create_template_success(self):
         """Test successful template creation"""
         result = self.generator.create_template(self.template_path)

@@ -3,6 +3,7 @@
 Comprehensive unit tests for Multi Sheet Controller
 """
 import unittest
+import pytest
 import tempfile
 import os
 from unittest.mock import patch, Mock, MagicMock
@@ -102,6 +103,9 @@ class TestMultiSheetController(unittest.TestCase):
         
         workbook.save(self.test_file)
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.controller
     def test_controller_initialization(self):
         """Test MultiSheetTestController initialization"""
         controller = MultiSheetTestController(self.test_file)
@@ -110,6 +114,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertIsNone(controller.workbook)  # Not loaded yet
         self.assertEqual(len(controller.sheet_controllers), 0)  # Not loaded yet
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.excel_processing
     def test_load_workbook_success(self):
         """Test successful workbook loading"""
         controller = MultiSheetTestController(self.test_file)
@@ -120,6 +127,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertIn('CONTROLLER', controller.workbook.sheetnames)
         self.assertIn('SMOKE', controller.workbook.sheetnames)
 
+    @pytest.mark.negative
+    @pytest.mark.multi_sheet
+    @pytest.mark.edge_case
     def test_load_workbook_invalid_file(self):
         """Test workbook loading with invalid file"""
         invalid_file = os.path.join(self.temp_dir, 'nonexistent.xlsx')
@@ -128,6 +138,9 @@ class TestMultiSheetController(unittest.TestCase):
         
         self.assertFalse(result)
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.validation
     def test_validate_controller_sheet_success(self):
         """Test successful CONTROLLER sheet validation"""
         controller = MultiSheetTestController(self.test_file)
@@ -136,6 +149,9 @@ class TestMultiSheetController(unittest.TestCase):
         result = controller.validate_controller_sheet()
         self.assertTrue(result)
 
+    @pytest.mark.negative
+    @pytest.mark.multi_sheet
+    @pytest.mark.validation
     def test_validate_controller_sheet_missing(self):
         """Test CONTROLLER sheet validation when sheet is missing"""
         # Create file without CONTROLLER sheet
@@ -152,6 +168,9 @@ class TestMultiSheetController(unittest.TestCase):
         # Clean up
         os.remove(no_controller_file)
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.controller
     def test_load_controller_data_success(self):
         """Test successful controller data loading"""
         controller = MultiSheetTestController(self.test_file)
@@ -169,6 +188,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertIn('INTEGRATION', sheet_names)
         self.assertIn('PERFORMANCE', sheet_names)
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.controller
     def test_get_enabled_sheets(self):
         """Test getting enabled sheets"""
         controller = MultiSheetTestController(self.test_file)
@@ -185,6 +207,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertIn('INTEGRATION', enabled_names)
         self.assertNotIn('PERFORMANCE', enabled_names)
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.controller
     def test_get_disabled_sheets(self):
         """Test getting disabled sheets"""
         controller = MultiSheetTestController(self.test_file)
@@ -197,6 +222,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertEqual(len(disabled_sheets), 1)
         self.assertEqual(disabled_sheets[0].sheet_name, 'PERFORMANCE')
 
+    @pytest.mark.positive
+    @pytest.mark.utility
+    @pytest.mark.edge_case
     def test_convert_bool_method(self):
         """Test _convert_bool method"""
         controller = MultiSheetTestController(self.test_file)
@@ -218,6 +246,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertFalse(controller._convert_bool(''))
         self.assertFalse(controller._convert_bool(None))
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.statistical
     def test_get_sheet_test_counts(self):
         """Test _get_sheet_test_counts method"""
         controller = MultiSheetTestController(self.test_file)
@@ -238,6 +269,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertEqual(total, 0)
         self.assertEqual(enabled, 0)
 
+    @pytest.mark.positive
+    @pytest.mark.dataclass
+    @pytest.mark.data_structures
     def test_sheet_controller_dataclass(self):
         """Test SheetController dataclass"""
         sheet_controller = SheetController(
@@ -256,6 +290,9 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertEqual(sheet_controller.test_count, 5)
         self.assertEqual(sheet_controller.enabled_test_count, 3)
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.output
     def test_print_controller_summary(self):
         """Test print_controller_summary method"""
         controller = MultiSheetTestController(self.test_file)
@@ -268,6 +305,10 @@ class TestMultiSheetController(unittest.TestCase):
         except Exception as e:
             self.fail(f"print_controller_summary raised an exception: {e}")
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.functional
+    @pytest.mark.integration
     def test_execute_controlled_tests(self):
         """Test execute_controlled_tests method"""
         controller = MultiSheetTestController(self.test_file)
@@ -290,6 +331,9 @@ class TestMultiSheetController(unittest.TestCase):
             self.assertIn('INTEGRATION', results)
             self.assertNotIn('PERFORMANCE', results)  # Disabled
 
+    @pytest.mark.positive
+    @pytest.mark.multi_sheet
+    @pytest.mark.filtering
     def test_apply_filters_method(self):
         """Test _apply_filters method"""
         controller = MultiSheetTestController(self.test_file)
@@ -340,6 +384,10 @@ class TestMultiSheetController(unittest.TestCase):
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].test_category, 'CONNECTION')
 
+    @pytest.mark.negative
+    @pytest.mark.multi_sheet
+    @pytest.mark.validation
+    @pytest.mark.edge_case
     def test_error_handling_invalid_controller_sheet(self):
         """Test error handling with invalid CONTROLLER sheet structure"""
         # Create file with wrong CONTROLLER headers
@@ -364,6 +412,9 @@ class TestMultiSheetController(unittest.TestCase):
         # Clean up
         os.remove(invalid_file)
 
+    @pytest.mark.negative
+    @pytest.mark.multi_sheet
+    @pytest.mark.edge_case
     def test_missing_referenced_sheets(self):
         """Test handling of missing referenced sheets"""
         # Create file where CONTROLLER references non-existent sheets
@@ -398,6 +449,9 @@ class TestMultiSheetController(unittest.TestCase):
         # Clean up
         os.remove(missing_sheet_file)
 
+    @pytest.mark.edge_case
+    @pytest.mark.multi_sheet
+    @pytest.mark.validation
     def test_empty_controller_sheet(self):
         """Test handling of empty CONTROLLER sheet"""
         empty_file = os.path.join(self.temp_dir, 'empty_controller.xlsx')
