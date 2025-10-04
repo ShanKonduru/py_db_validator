@@ -5,6 +5,7 @@ __pycache__/
 *$py.class
 test_results/
 test_reports/
+custom_reports/
 
 # SQL test scripts and data insertion files (not for production)
 sql_scripts/

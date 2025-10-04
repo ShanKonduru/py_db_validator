@@ -22,22 +22,26 @@ The `sdm_test_suite.xlsx` template is included in the repository with sample Pos
 # Run all enabled tests
 python excel_test_driver.py
 
+# Run tests and generate reports (HTML + Markdown)
+python excel_test_driver.py --reports
+
 # List available tests
 python excel_test_driver.py --list-tests
 
-# Run high priority tests only
-python excel_test_driver.py --priority HIGH
+# Run high priority tests with reports
+python excel_test_driver.py --priority HIGH --reports
 
 # Run connection tests only
 python excel_test_driver.py --category CONNECTION
 
-# Run specific tests by ID
-python excel_test_driver.py --test-ids SMOKE_PG_001,SMOKE_PG_004
+# Run specific tests by ID with reports
+python excel_test_driver.py --test-ids SMOKE_PG_001,SMOKE_PG_004 --reports
 
 # Run tests with specific tags
 python excel_test_driver.py --tags smoke,db
 
-# Run tests for specific environment/application
+# Run tests for specific environment/application with custom report directory
+python excel_test_driver.py --environment DEV --application DUMMY --reports --report-dir custom_reports
 python excel_test_driver.py --environment DEV --application DUMMY
 ```
 
@@ -99,8 +103,47 @@ Options:
   -t, --tags TAGS           Filter by tags (comma-separated)
   -i, --test-ids IDS        Run specific test IDs (comma-separated)
   -l, --list-tests          List available tests without executing
+  -r, --reports             Generate HTML and Markdown reports after execution
+  --report-dir DIR          Directory to save test reports (default: test_reports)
   -h, --help                Show help message
 ```
+
+## 📊 Test Reports
+
+The Excel test driver can generate comprehensive reports in two formats:
+
+### 📄 HTML Report Features
+- **Visual presentation** with modern, responsive design
+- **Color-coded results** with status badges and emojis
+- **Interactive tables** with hover effects and proper formatting
+- **Statistics dashboard** with success rates and metrics
+- **Professional styling** suitable for sharing with stakeholders
+- **Browser-friendly** format that opens directly in web browsers
+
+### 📝 Markdown Report Features
+- **Detailed analysis** with comprehensive test breakdowns
+- **Success rate analysis** with recommendations
+- **Execution timeline** showing test order and timing
+- **Category-specific recommendations** for failures
+- **Version control friendly** format for documentation
+- **CI/CD integration** ready for automated reporting
+
+### 📁 Report Generation
+
+```bash
+# Generate reports after test execution
+python excel_test_driver.py --reports
+
+# Custom report directory
+python excel_test_driver.py --reports --report-dir my_reports
+
+# High priority tests with reports
+python excel_test_driver.py --priority HIGH --reports
+```
+
+Reports are saved with timestamped filenames:
+- `test_report_YYYYMMDD-HHMMSS.html`
+- `test_report_YYYYMMDD-HHMMSS.md`
 
 ## 📊 Execution Results
 
@@ -151,11 +194,14 @@ See [POSTGRESQL_SMOKE_TESTS.md](POSTGRESQL_SMOKE_TESTS.md) for detailed configur
 
 - ✅ **Non-technical accessibility** - Test managers can modify tests without coding
 - ✅ **Flexible filtering** - Run subsets of tests by various criteria
-- ✅ **Clear reporting** - Detailed execution summaries and statistics
+- ✅ **Professional reporting** - HTML and Markdown reports with detailed analysis
+- ✅ **Visual presentation** - Modern HTML reports perfect for stakeholders
+- ✅ **Documentation integration** - Markdown reports for technical documentation
 - ✅ **Version control friendly** - Excel files can be tracked in Git
 - ✅ **Maintenance friendly** - Easy to enable/disable tests
 - ✅ **CI/CD integration** - Command-line interface for automation
 - ✅ **Scalable** - Easy to add new test categories and environments
+- ✅ **Timestamped reports** - Historical tracking of test execution results
 
 ## 🚦 Exit Codes
 
