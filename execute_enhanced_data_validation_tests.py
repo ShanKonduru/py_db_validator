@@ -166,11 +166,36 @@ def execute_enhanced_data_validation_tests(excel_file: str):
             
             if result.passed:
                 print(f"   ✅ PASS ({duration:.3f}s)")
+                if test_case.test_category == "SCHEMA_VALIDATION" and hasattr(result, 'details'):
+                    print(f"   📊 Schema Match: {result.details.get('source_columns', 0)} columns validated")
                 passed += 1
                 status = "PASS"
             else:
                 print(f"   ❌ FAIL ({duration:.3f}s)")
                 print(f"   💬 {result.message}")
+                
+                # Display detailed schema comparison for SCHEMA_VALIDATION
+                if test_case.test_category == "SCHEMA_VALIDATION" and hasattr(result, 'details'):
+                    details = result.details
+                    if 'detailed_report' in details:
+                        print(f"   ")
+                        print(f"   📋 DETAILED SCHEMA COMPARISON:")
+                        print(f"   {'='*60}")
+                        print(f"   SOURCE TABLE: {details.get('source_table', source_table)}")
+                        print(f"   TARGET TABLE: {details.get('target_table', target_table)}")
+                        print(f"   ")
+                        
+                        for i, diff in enumerate(details['detailed_report'], 1):
+                            print(f"   [{i}] COLUMN: {diff['column']}")
+                            print(f"       ISSUE: {diff['issue']}")
+                            print(f"       SOURCE: {diff['source_type']}")
+                            print(f"       TARGET: {diff['target_type']}")
+                            print(f"       DESC: {diff['description']}")
+                            print(f"   ")
+                        
+                        print(f"   SUMMARY: {len(details['detailed_report'])} schema difference(s) found")
+                        print(f"   {'='*60}")
+                
                 failed += 1
                 status = "FAIL"
             

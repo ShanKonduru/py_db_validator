@@ -358,92 +358,279 @@ def create_instructions_sheet(wb):
 
 
 def create_reference_sheet(wb):
-    """Create comprehensive REFERENCE sheet"""
+    """Create comprehensive and readable REFERENCE sheet"""
     ws = wb.create_sheet("REFERENCE")
     
-    # Title
-    ws.cell(row=1, column=1, value="ENHANCED REFERENCE DOCUMENTATION")
-    ws.cell(row=1, column=1).font = Font(bold=True, size=16, color="FFFFFF")
-    ws.cell(row=1, column=1).fill = PatternFill(start_color="8E44AD", end_color="8E44AD", fill_type="solid")
-    ws.merge_cells("A1:D1")
+    # Main title
+    ws.cell(row=1, column=1, value="📚 ENHANCED UNIFIED SDM TEST SUITE - REFERENCE GUIDE")
+    ws.cell(row=1, column=1).font = Font(bold=True, size=18, color="FFFFFF")
+    ws.cell(row=1, column=1).fill = PatternFill(start_color="2C3E50", end_color="2C3E50", fill_type="solid")
+    ws.cell(row=1, column=1).alignment = Alignment(horizontal="center", vertical="center")
+    ws.merge_cells("A1:F1")
+    ws.row_dimensions[1].height = 30
     
-    # Reference content
-    reference_data = [
-        "",
-        "TEST CATEGORIES AND FUNCTIONS:",
-        "",
-        "Category", "Function Name", "Description", "Sheet Usage",
-        "SETUP", "test_environment_setup", "Verify test environment configuration", "SMOKE",
-        "CONFIGURATION", "test_dummy_config_availability", "Check configuration file availability", "SMOKE", 
-        "SECURITY", "test_environment_credentials", "Validate environment credentials", "SMOKE",
-        "CONNECTION", "test_postgresql_connection", "Test database connectivity", "SMOKE, CONTROLLER",
-        "QUERIES", "test_postgresql_basic_queries", "Execute basic SQL queries", "SMOKE",
-        "PERFORMANCE", "test_postgresql_connection_performance", "Measure connection performance", "SMOKE",
-        "TABLE_EXISTS", "_execute_table_exists_test", "Verify table existence", "SMOKE",
-        "TABLE_SELECT", "_execute_table_select_test", "Test table SELECT operations", "SMOKE",
-        "TABLE_ROWS", "_execute_table_rows_test", "Validate table row operations", "SMOKE",
-        "TABLE_STRUCTURE", "_execute_table_structure_test", "Analyze table structure", "SMOKE",
-        "SCHEMA_VALIDATION", "schema_validation_compare", "Compare table schemas", "DATAVALIDATIONS",
-        "ROW_COUNT_VALIDATION", "row_count_validation_compare", "Compare table row counts", "DATAVALIDATIONS",
-        "NULL_VALUE_VALIDATION", "null_value_validation_compare", "Compare NULL value patterns", "DATAVALIDATIONS",
-        "DATA_QUALITY_VALIDATION", "data_quality_validation_compare", "Validate data quality metrics", "DATAVALIDATIONS",
-        "COLUMN_COMPARE_VALIDATION", "column_compare_validation", "Compare column data", "DATAVALIDATIONS",
-        "",
-        "VALID VALUES:",
-        "",
-        "Field", "Valid Values", "Description", "Example",
-        "Enable", "TRUE, FALSE", "Boolean test execution flag", "TRUE",
-        "Application_Name", "POSTGRES, DUMMY, MYAPP, DATABASE", "Target application identifier", "POSTGRES",
-        "Environment_Name", "DEV, TEST, STAGING, PROD, UAT", "Target environment", "DEV",
-        "Priority", "HIGH, MEDIUM, LOW", "Test execution priority", "HIGH",
-        "Expected_Result", "PASS, FAIL, SKIP", "Expected test outcome", "PASS",
-        "Test_Category", "See categories above", "Functional test category", "SCHEMA_VALIDATION",
-        "",
-        "PARAMETER FORMATS:",
-        "",
-        "Parameter Type", "Format", "Example", "Usage",
-        "Table Parameters", "source_table=name;target_table=name", "source_table=products;target_table=new_products", "DATAVALIDATIONS",
-        "Boolean Parameters", "parameter_name=true/false", "ignore_sequence=true;check_constraints=false", "DATAVALIDATIONS",
-        "Numeric Parameters", "parameter_name=number", "tolerance_percent=5;missing_data_threshold=10", "DATAVALIDATIONS",
-        "String Parameters", "parameter_name=value", "expected_variance=large;report_type=detailed", "DATAVALIDATIONS",
-        "Sheet References", "sheet_name=SHEETNAME", "sheet_name=SMOKE", "CONTROLLER",
-        "",
-        "DATABASE TABLES:",
-        "",
-        "Source Tables", "Target Tables", "Description", "Row Count",
-        "products", "new_products", "Product catalog data", "1200 → 8",
-        "employees", "new_employees", "Employee information", "1000 → 7", 
-        "orders", "new_orders", "Order transaction data", "800 → 7",
-        "validation_results", "N/A", "Test execution results storage", "Variable",
-        "",
-        "ORIGINAL SMOKE TESTS PRESERVED:",
-        "",
-        "Test Range", "Purpose", "Coverage", "Expected Results",
-        "SMOKE_PG_001-006", "Basic environment validation", "Setup, config, security, connection", "All PASS",
-        "SMOKE_PG_007-009", "Table existence validation", "products, employees, orders tables", "All PASS",
-        "SMOKE_PG_010-012", "Table SELECT operations", "Basic query functionality", "All PASS",
-        "SMOKE_PG_013-015", "Table data validation", "Row count and data presence", "All PASS",
-        "SMOKE_PG_016-018", "Table structure analysis", "Schema and column validation", "All PASS",
-        "SMOKE_PG_019-030", "Extended table validation", "Comprehensive coverage", "All PASS"
+    current_row = 3
+    
+    # Section 1: Quick Overview
+    ws.cell(row=current_row, column=1, value="🔍 QUICK OVERVIEW")
+    ws.cell(row=current_row, column=1).font = Font(bold=True, size=14, color="FFFFFF")
+    ws.cell(row=current_row, column=1).fill = PatternFill(start_color="3498DB", end_color="3498DB", fill_type="solid")
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws.row_dimensions[current_row].height = 25
+    current_row += 1
+    
+    overview_data = [
+        ["", "", "", "", "", ""],
+        ["📋 Sheet", "🎯 Purpose", "📊 Test Count", "⏱️ Typical Duration", "🔧 Usage", "✅ Status"],
+        ["SMOKE", "Environment validation & basic connectivity", "30 tests", "1-2 minutes", "Run first to verify setup", "✅ Ready"],
+        ["CONTROLLER", "Test suite orchestration & management", "6 controllers", "Variable", "Batch execution control", "✅ Ready"],
+        ["DATAVALIDATIONS", "Data integrity & quality validation", "12 tests", "5-10 minutes", "Compare source vs target data", "✅ Ready"],
+        ["INSTRUCTIONS", "Comprehensive usage guide", "N/A", "N/A", "Reference for users", "✅ Complete"],
+        ["REFERENCE", "Complete documentation (this sheet)", "N/A", "N/A", "Quick reference guide", "✅ You are here!"],
+        ["", "", "", "", "", ""]
     ]
     
-    # Add reference data
-    for row_idx, ref_data in enumerate(reference_data, 2):
-        if isinstance(ref_data, str):
-            ws.cell(row=row_idx, column=1, value=ref_data)
-            if ref_data.endswith(":") and ref_data != "":
-                ws.cell(row=row_idx, column=1).font = Font(bold=True, color="8E44AD")
-        else:
-            # This is tuple data for table
-            for col_idx, value in enumerate(ref_data, 1):
-                cell = ws.cell(row=row_idx, column=col_idx, value=value)
-                if row_idx in [4, 20, 27, 32, 37, 43]:  # Header rows
-                    cell.font = Font(bold=True, color="FFFFFF")
-                    cell.fill = PatternFill(start_color="8E44AD", end_color="8E44AD", fill_type="solid")
+    for row_data in overview_data:
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws.cell(row=current_row, column=col_idx, value=value)
+            if current_row == 4:  # Header row
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="3498DB", end_color="3498DB", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            elif value and value != "":
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                # Add borders
+                cell.border = Border(
+                    left=Side(style='thin'), right=Side(style='thin'),
+                    top=Side(style='thin'), bottom=Side(style='thin')
+                )
+        current_row += 1
     
-    # Set column widths
-    for col in ['A', 'B', 'C', 'D']:
-        ws.column_dimensions[col].width = 30
+    current_row += 1
+    
+    # Section 2: Column Definitions
+    ws.cell(row=current_row, column=1, value="📝 COLUMN DEFINITIONS")
+    ws.cell(row=current_row, column=1).font = Font(bold=True, size=14, color="FFFFFF")
+    ws.cell(row=current_row, column=1).fill = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws.row_dimensions[current_row].height = 25
+    current_row += 1
+    
+    column_data = [
+        ["", "", "", "", "", ""],
+        ["📊 Column Name", "🔍 Description", "💡 Valid Values", "📋 Example", "⚠️ Required", "💬 Notes"],
+        ["Enable", "Controls test execution", "TRUE, FALSE", "TRUE", "Yes", "Set FALSE to skip test"],
+        ["Test_Case_ID", "Unique test identifier", "Any unique string", "SMOKE_PG_001", "Yes", "Must be unique across sheet"],
+        ["Test_Case_Name", "Descriptive test name", "Any descriptive text", "Environment Setup", "Yes", "Keep concise but clear"],
+        ["Application_Name", "Target application", "POSTGRES, DUMMY, MYAPP", "POSTGRES", "Yes", "Must match your setup"],
+        ["Environment_Name", "Target environment", "DEV, TEST, STAGING, PROD", "DEV", "Yes", "Environment to test against"],
+        ["Priority", "Test execution priority", "HIGH, MEDIUM, LOW", "HIGH", "Yes", "HIGH = critical tests"],
+        ["Test_Category", "Functional test category", "See Test Categories below", "CONNECTION", "Yes", "Determines which function runs"],
+        ["Expected_Result", "Expected outcome", "PASS, FAIL, SKIP", "PASS", "Yes", "What you expect to happen"],
+        ["Timeout_Seconds", "Max execution time", "Number (30-3600)", "60", "Yes", "Prevents hanging tests"],
+        ["Description", "Detailed test description", "Any explanatory text", "Tests basic connectivity", "No", "Helps understand purpose"],
+        ["Prerequisites", "Required conditions", "Any dependency info", "Database must be running", "No", "What must be true first"],
+        ["Tags", "Categorization tags", "Comma-separated keywords", "smoke,connection,critical", "No", "Useful for filtering"],
+        ["Parameters", "Test configuration", "key=value;key=value", "source_table=products", "Depends", "Required for data validation"],
+        ["", "", "", "", "", ""]
+    ]
+    
+    for row_data in column_data:
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws.cell(row=current_row, column=col_idx, value=value)
+            if current_row == current_row - len(column_data) + 2:  # Header row
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="E74C3C", end_color="E74C3C", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            elif value and value != "":
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                # Color code based on column
+                if col_idx == 5:  # Required column
+                    if value == "Yes":
+                        cell.fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
+                # Add borders
+                cell.border = Border(
+                    left=Side(style='thin'), right=Side(style='thin'),
+                    top=Side(style='thin'), bottom=Side(style='thin')
+                )
+        current_row += 1
+    
+    current_row += 1
+    
+    # Section 3: Test Categories
+    ws.cell(row=current_row, column=1, value="🏷️ TEST CATEGORIES")
+    ws.cell(row=current_row, column=1).font = Font(bold=True, size=14, color="FFFFFF")
+    ws.cell(row=current_row, column=1).fill = PatternFill(start_color="9B59B6", end_color="9B59B6", fill_type="solid")
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws.row_dimensions[current_row].height = 25
+    current_row += 1
+    
+    category_data = [
+        ["", "", "", "", "", ""],
+        ["🏷️ Category", "📄 Sheet", "🔧 Function", "📝 Description", "⏱️ Typical Time", "💡 Usage Tips"],
+        ["SETUP", "SMOKE", "test_environment_setup", "Verify test environment readiness", "< 1 sec", "Always run first"],
+        ["CONFIGURATION", "SMOKE", "test_dummy_config_availability", "Check config file availability", "< 1 sec", "Validates setup files"],
+        ["SECURITY", "SMOKE", "test_environment_credentials", "Validate database credentials", "< 1 sec", "Ensures access rights"],
+        ["CONNECTION", "SMOKE", "test_postgresql_connection", "Test database connectivity", "1-5 sec", "Core connectivity test"],
+        ["QUERIES", "SMOKE", "test_postgresql_basic_queries", "Execute basic SQL queries", "1-3 sec", "Validates query capability"],
+        ["PERFORMANCE", "SMOKE", "test_postgresql_connection_performance", "Measure connection speed", "1-2 sec", "Performance baseline"],
+        ["TABLE_EXISTS", "SMOKE", "_execute_table_exists_test", "Verify table existence", "< 1 sec", "Check table availability"],
+        ["TABLE_SELECT", "SMOKE", "_execute_table_select_test", "Test SELECT operations", "1-2 sec", "Basic query validation"],
+        ["TABLE_ROWS", "SMOKE", "_execute_table_rows_test", "Validate table data", "1-3 sec", "Check data presence"],
+        ["TABLE_STRUCTURE", "SMOKE", "_execute_table_structure_test", "Analyze table schema", "1-2 sec", "Schema validation"],
+        ["SCHEMA_VALIDATION", "DATAVALIDATIONS", "schema_validation_compare", "Compare table schemas", "5-10 sec", "Use source_table & target_table"],
+        ["ROW_COUNT_VALIDATION", "DATAVALIDATIONS", "row_count_validation_compare", "Compare row counts", "2-5 sec", "Good for data volume checks"],
+        ["NULL_VALUE_VALIDATION", "DATAVALIDATIONS", "null_value_validation_compare", "Compare NULL patterns", "3-8 sec", "Data quality assessment"],
+        ["DATA_QUALITY_VALIDATION", "DATAVALIDATIONS", "data_quality_validation_compare", "Quality metrics validation", "5-15 sec", "Comprehensive data checks"],
+        ["", "", "", "", "", ""]
+    ]
+    
+    for row_data in category_data:
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws.cell(row=current_row, column=col_idx, value=value)
+            if current_row == current_row - len(category_data) + 2:  # Header row
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="9B59B6", end_color="9B59B6", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            elif value and value != "":
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                # Color code by sheet
+                if col_idx == 2:  # Sheet column
+                    if value == "SMOKE":
+                        cell.fill = PatternFill(start_color="E8F4FD", end_color="E8F4FD", fill_type="solid")
+                    elif value == "DATAVALIDATIONS":
+                        cell.fill = PatternFill(start_color="FDEAEA", end_color="FDEAEA", fill_type="solid")
+                # Add borders
+                cell.border = Border(
+                    left=Side(style='thin'), right=Side(style='thin'),
+                    top=Side(style='thin'), bottom=Side(style='thin')
+                )
+        current_row += 1
+    
+    current_row += 1
+    
+    # Section 4: Parameter Examples
+    ws.cell(row=current_row, column=1, value="⚙️ PARAMETER EXAMPLES")
+    ws.cell(row=current_row, column=1).font = Font(bold=True, size=14, color="FFFFFF")
+    ws.cell(row=current_row, column=1).fill = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws.row_dimensions[current_row].height = 25
+    current_row += 1
+    
+    parameter_data = [
+        ["", "", "", "", "", ""],
+        ["🔧 Parameter Type", "📋 Format", "💡 Example", "📄 Used In", "⚠️ Required", "💬 Description"],
+        ["Table Parameters", "source_table=name;target_table=name", "source_table=products;target_table=new_products", "DATAVALIDATIONS", "Yes", "Specifies which tables to compare"],
+        ["Boolean Parameters", "parameter=true/false", "ignore_sequence=true;check_constraints=false", "DATAVALIDATIONS", "No", "Enable/disable specific checks"],
+        ["Numeric Parameters", "parameter=number", "tolerance_percent=5;timeout_seconds=120", "DATAVALIDATIONS", "No", "Numeric configuration values"],
+        ["String Parameters", "parameter=value", "expected_variance=large;report_type=detailed", "DATAVALIDATIONS", "No", "String configuration values"],
+        ["Sheet References", "sheet_name=SHEETNAME", "sheet_name=SMOKE", "CONTROLLER", "Yes", "References another sheet to execute"],
+        ["Multiple Values", "parameter=value1,value2", "source_table=products,employees,orders", "DATAVALIDATIONS", "No", "Comma-separated multiple values"],
+        ["", "", "", "", "", ""]
+    ]
+    
+    for row_data in parameter_data:
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws.cell(row=current_row, column=col_idx, value=value)
+            if current_row == current_row - len(parameter_data) + 2:  # Header row
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            elif value and value != "":
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                # Add borders
+                cell.border = Border(
+                    left=Side(style='thin'), right=Side(style='thin'),
+                    top=Side(style='thin'), bottom=Side(style='thin')
+                )
+        current_row += 1
+    
+    current_row += 1
+    
+    # Section 5: Database Tables
+    ws.cell(row=current_row, column=1, value="🗃️ DATABASE TABLES")
+    ws.cell(row=current_row, column=1).font = Font(bold=True, size=14, color="FFFFFF")
+    ws.cell(row=current_row, column=1).fill = PatternFill(start_color="F39C12", end_color="F39C12", fill_type="solid")
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws.row_dimensions[current_row].height = 25
+    current_row += 1
+    
+    table_data = [
+        ["", "", "", "", "", ""],
+        ["📊 Source Table", "🎯 Target Table", "📝 Description", "📈 Row Count", "🔍 Status", "💡 Usage Notes"],
+        ["products", "new_products", "Product catalog data", "1200 → 8", "Available", "Large variance expected for testing"],
+        ["employees", "new_employees", "Employee information", "1000 → 7", "Available", "Schema differences exist"],
+        ["orders", "new_orders", "Order transaction data", "800 → 7", "Available", "Contains foreign key relationships"],
+        ["validation_results", "N/A", "Test execution results", "Variable", "System", "Created automatically during test runs"],
+        ["", "", "", "", "", ""]
+    ]
+    
+    for row_data in table_data:
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws.cell(row=current_row, column=col_idx, value=value)
+            if current_row == current_row - len(table_data) + 2:  # Header row
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="F39C12", end_color="F39C12", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            elif value and value != "":
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                # Add borders
+                cell.border = Border(
+                    left=Side(style='thin'), right=Side(style='thin'),
+                    top=Side(style='thin'), bottom=Side(style='thin')
+                )
+        current_row += 1
+    
+    current_row += 1
+    
+    # Section 6: Execution Guide
+    ws.cell(row=current_row, column=1, value="🚀 EXECUTION GUIDE")
+    ws.cell(row=current_row, column=1).font = Font(bold=True, size=14, color="FFFFFF")
+    ws.cell(row=current_row, column=1).fill = PatternFill(start_color="E67E22", end_color="E67E22", fill_type="solid")
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws.row_dimensions[current_row].height = 25
+    current_row += 1
+    
+    execution_data = [
+        ["", "", "", "", "", ""],
+        ["🎯 Step", "📋 Command", "⏱️ Duration", "📊 Expected Results", "🔧 Purpose", "💡 Notes"],
+        ["1. Smoke Tests", "python execute_unified_smoke_tests.py enhanced_unified_sdm_test_suite.xlsx", "1-2 min", "5 PASS, 24 SKIP*", "Environment validation", "*24 skip due to missing functions"],
+        ["2. Data Validation", "python execute_enhanced_data_validation_tests.py enhanced_unified_sdm_test_suite.xlsx", "5-10 min", "3 PASS, 9 FAIL*", "Data quality checks", "*Failures expected due to data differences"],
+        ["3. Template Validation", "python enhanced_excel_validator.py enhanced_unified_sdm_test_suite.xlsx", "< 1 min", "Structure validated", "Excel file verification", "Checks template integrity"],
+        ["4. Generate New Template", "python create_enhanced_unified_excel_template.py", "< 1 min", "New template created", "Template regeneration", "Creates fresh template with all tests"],
+        ["", "", "", "", "", ""]
+    ]
+    
+    for row_data in execution_data:
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ws.cell(row=current_row, column=col_idx, value=value)
+            if current_row == current_row - len(execution_data) + 2:  # Header row
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="E67E22", end_color="E67E22", fill_type="solid")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            elif value and value != "":
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+                # Add borders
+                cell.border = Border(
+                    left=Side(style='thin'), right=Side(style='thin'),
+                    top=Side(style='thin'), bottom=Side(style='thin')
+                )
+        current_row += 1
+    
+    # Set optimal column widths for readability
+    ws.column_dimensions['A'].width = 25  # Category/Step
+    ws.column_dimensions['B'].width = 35  # Description/Command
+    ws.column_dimensions['C'].width = 40  # Details/Duration
+    ws.column_dimensions['D'].width = 30  # Examples/Results
+    ws.column_dimensions['E'].width = 20  # Usage/Purpose
+    ws.column_dimensions['F'].width = 35  # Notes
+    
+    # Add final footer
+    current_row += 1
+    ws.cell(row=current_row, column=1, value="📞 For questions or issues, refer to the INSTRUCTIONS sheet or contact the development team.")
+    ws.cell(row=current_row, column=1).font = Font(italic=True, size=10, color="7F8C8D")
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    ws.cell(row=current_row, column=1).alignment = Alignment(horizontal="center", vertical="center")
 
 
 def apply_sheet_formatting(ws, num_cols):

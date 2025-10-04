@@ -69,6 +69,51 @@ class DataValidator:
             
         return connector
     
+    def _format_column_type(self, col_info: dict) -> str:
+        """Format column type information for display"""
+        data_type = col_info['type']
+        length = col_info['length']
+        precision = col_info['precision']
+        scale = col_info['scale']
+        nullable = col_info['nullable']
+        
+        # Format the type string
+        if data_type in ['character varying', 'varchar']:
+            type_str = f"VARCHAR({length})" if length else "VARCHAR"
+        elif data_type == 'character':
+            type_str = f"CHAR({length})" if length else "CHAR"
+        elif data_type == 'text':
+            type_str = "TEXT"
+        elif data_type == 'numeric':
+            if precision and scale:
+                type_str = f"NUMERIC({precision},{scale})"
+            elif precision:
+                type_str = f"NUMERIC({precision})"
+            else:
+                type_str = "NUMERIC"
+        elif data_type == 'integer':
+            type_str = "INTEGER"
+        elif data_type == 'bigint':
+            type_str = "BIGINT"
+        elif data_type == 'smallint':
+            type_str = "SMALLINT"
+        elif data_type == 'boolean':
+            type_str = "BOOLEAN"
+        elif data_type == 'date':
+            type_str = "DATE"
+        elif data_type == 'timestamp without time zone':
+            type_str = "TIMESTAMP"
+        elif data_type == 'timestamp with time zone':
+            type_str = "TIMESTAMPTZ"
+        else:
+            type_str = data_type.upper()
+        
+        # Add nullable info
+        if nullable == 'NO':
+            type_str += " NOT NULL"
+        
+        return type_str
+    
     def schema_validation_compare(self, source_table: str, target_table: str) -> ValidationResult:
         """Compare schema between source and target tables in PostgreSQL"""
         
@@ -103,20 +148,45 @@ class DataValidator:
             target_columns = {col[0]: {'type': col[1], 'length': col[2], 'precision': col[3], 'scale': col[4], 'nullable': col[5]} for col in target_schema}
             
             differences = []
+            detailed_report = []
             
             # Check for missing columns in target
             for col_name, col_info in source_columns.items():
                 if col_name not in target_columns:
                     differences.append(f"Missing column in target: {col_name} ({col_info['type']})")
-                elif source_columns[col_name]['type'] != target_columns[col_name]['type']:
-                    differences.append(f"Type mismatch for {col_name}: source={col_info['type']}, target={target_columns[col_name]['type']}")
-                elif source_columns[col_name]['length'] != target_columns[col_name]['length']:
-                    differences.append(f"Length mismatch for {col_name}: source={col_info['length']}, target={target_columns[col_name]['length']}")
+                    detailed_report.append({
+                        'column': col_name,
+                        'issue': 'MISSING_IN_TARGET',
+                        'source_type': self._format_column_type(col_info),
+                        'target_type': 'N/A',
+                        'description': f"Column '{col_name}' exists in source but missing in target table"
+                    })
+                else:
+                    # Compare column properties
+                    src_type_str = self._format_column_type(col_info)
+                    tgt_type_str = self._format_column_type(target_columns[col_name])
+                    
+                    if col_info != target_columns[col_name]:
+                        differences.append(f"Column difference: {col_name}")
+                        detailed_report.append({
+                            'column': col_name,
+                            'issue': 'SCHEMA_MISMATCH',
+                            'source_type': src_type_str,
+                            'target_type': tgt_type_str,
+                            'description': f"Column '{col_name}' has different properties between source and target"
+                        })
             
             # Check for extra columns in target
             for col_name, col_info in target_columns.items():
                 if col_name not in source_columns:
                     differences.append(f"Extra column in target: {col_name} ({col_info['type']})")
+                    detailed_report.append({
+                        'column': col_name,
+                        'issue': 'EXTRA_IN_TARGET',
+                        'source_type': 'N/A',
+                        'target_type': self._format_column_type(col_info),
+                        'description': f"Column '{col_name}' exists in target but missing in source table"
+                    })
             
             connector.disconnect()
             
@@ -124,13 +194,25 @@ class DataValidator:
                 return ValidationResult(
                     passed=False,
                     message=f"Schema differences found between {source_table} and {full_target_table}",
-                    details={"differences": differences, "source_columns": len(source_columns), "target_columns": len(target_columns)}
+                    details={
+                        "differences": differences, 
+                        "source_columns": len(source_columns), 
+                        "target_columns": len(target_columns),
+                        "detailed_report": detailed_report,
+                        "source_table": source_table,
+                        "target_table": full_target_table
+                    }
                 )
             else:
                 return ValidationResult(
                     passed=True,
                     message=f"Schema validation passed for {source_table} vs {full_target_table}",
-                    details={"source_columns": len(source_columns), "target_columns": len(target_columns)}
+                    details={
+                        "source_columns": len(source_columns), 
+                        "target_columns": len(target_columns),
+                        "source_table": source_table,
+                        "target_table": full_target_table
+                    }
                 )
                 
         except Exception as e:
