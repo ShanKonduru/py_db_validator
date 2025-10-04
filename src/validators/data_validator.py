@@ -284,8 +284,10 @@ class DataValidator:
             
             # Check for orphaned records (basic foreign key validation)
             if target_table == "orders":
+                # Use the actual target_table with prefix for orphaned records check
+                full_orders_table = f"{self.target_table_prefix}{target_table}"
                 cursor.execute(f"""
-                    SELECT COUNT(*) FROM {full_target_table} o 
+                    SELECT COUNT(*) FROM {full_orders_table} o 
                     LEFT JOIN new_employees e ON o.employee_id = e.employee_id 
                     WHERE o.employee_id IS NOT NULL AND e.employee_id IS NULL
                 """)
