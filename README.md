@@ -46,6 +46,9 @@ tests/
 ```bash
 @pytest.mark.unit        # All unit tests
 @pytest.mark.db          # Database-related tests  
+@pytest.mark.smoke       # Quick smoke tests
+@pytest.mark.integration # Integration tests
+@pytest.mark.performance # Performance tests
 @pytest.mark.positive    # Positive test cases
 @pytest.mark.negative    # Negative test cases
 @pytest.mark.edge        # Edge case tests
@@ -60,14 +63,20 @@ pytest tests/ --cov=src --cov-report=html --cov-report=term-missing
 
 # Run specific test categories
 pytest tests/ -m 'unit'           # All unit tests
+pytest tests/ -m 'smoke'          # Quick smoke tests
 pytest tests/ -m 'positive'       # Positive cases only  
 pytest tests/ -m 'edge'           # Edge cases only
 pytest tests/ -m 'not negative'   # All except negative cases
+
+# Run combined markers
+pytest tests/ -m 'smoke and db'   # Database smoke tests
+pytest tests/ -m 'integration'    # Integration tests
 
 # Run tests for specific database
 pytest tests/test_oracle_connector.py -v
 pytest tests/test_postgresql_connector.py -v
 pytest tests/test_sqlserver_connector.py -v
+pytest tests/test_postgresql_smoke.py -v     # PostgreSQL smoke tests
 ```
 
 ### Code Coverage Results
@@ -108,7 +117,33 @@ scripts\005_run_code_cov.bat
 python coverage_summary.py
 ```
 
-### 3. Usage Example
+### 3. PostgreSQL Smoke Tests
+
+Quick smoke tests to verify PostgreSQL connectivity and basic functionality:
+
+```bash
+# Run smoke test runner (recommended)
+python run_postgresql_smoke_tests.py
+
+# Run smoke tests via pytest
+pytest -m "smoke" -v                    # All smoke tests
+pytest -m "smoke and db" -v             # Database smoke tests only
+pytest tests/test_postgresql_smoke.py -v # PostgreSQL smoke tests specifically
+
+# Run standalone (backwards compatibility)
+python tests/test_postgresql_smoke.py
+```
+
+**Smoke Test Categories:**
+
+- 🔧 **Environment Setup**: Validates configuration files and environment variables
+- 🗃️ **Configuration**: Checks DUMMY application config in DEV environment
+- 🔐 **Credentials**: Verifies database credentials are properly set
+- 🔌 **Connection**: Tests actual PostgreSQL database connectivity
+- 📊 **Basic Queries**: Validates version queries, schema access, and table listing
+- ⚡ **Performance**: Ensures connection establishes within reasonable time
+
+### 4. Usage Example
 
 ```python
 from src.connectors.postgresql_connector import PostgreSQLConnector

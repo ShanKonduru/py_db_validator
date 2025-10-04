@@ -3,16 +3,10 @@
     "config_version": "1.0",
     "created_date": "2025-10-03",
     "description": "Database connection configuration for multi-environment, multi-application setup",
-    "supported_environments": [
-      "DEV",
-      "QA",
-      "ACC",
-      "NP1",
-      "PRE_PROD"
-    ],
+    "supported_environments": ["DEV", "QA", "ACC", "NP1", "PRE_PROD"],
     "supported_applications": {
       "RED": "Oracle Database",
-      "MREE": "Oracle Database",
+      "MREE": "Oracle Database", 
       "SADB": "Oracle Database",
       "TPS": "PostgreSQL Database",
       "MDW": "SQL Server Database"
@@ -37,7 +31,7 @@
         },
         "MREE": {
           "db_type": "oracle",
-          "host": "dev-oracle-mree.company.com",
+          "host": "dev-oracle-mree.company.com", 
           "port": 1521,
           "service_name": "MREEDEV",
           "schema": "MREE_SCHEMA",
@@ -83,23 +77,11 @@
           "connection_timeout": 30,
           "query_timeout": 300,
           "max_connections": 10
-        },
-        "DUMMY": {
-          "db_type": "postgresql",
-          "host": "localhost",
-          "port": 5432,
-          "database": "postgres",
-          "schema": "public",
-          "username_env_var": "DEV_DUMMY_USERNAME",
-          "password_env_var": "DEV_DUMMY_PASSWORD",
-          "connection_timeout": 30,
-          "query_timeout": 300,
-          "max_connections": 10
         }
       }
     },
     "QA": {
-      "name": "Quality Assurance",
+      "name": "Quality Assurance", 
       "description": "QA environment for testing and validation",
       "applications": {
         "RED": {
@@ -119,7 +101,7 @@
           "host": "qa-oracle-mree.company.com",
           "port": 1521,
           "service_name": "MREEQA",
-          "schema": "MREE_SCHEMA",
+          "schema": "MREE_SCHEMA", 
           "username_env_var": "QA_MREE_USERNAME",
           "password_env_var": "QA_MREE_PASSWORD",
           "connection_timeout": 30,
@@ -187,7 +169,7 @@
           "port": 1521,
           "service_name": "MREEACC",
           "schema": "MREE_SCHEMA",
-          "username_env_var": "ACC_MREE_USERNAME",
+          "username_env_var": "ACC_MREE_USERNAME", 
           "password_env_var": "ACC_MREE_PASSWORD",
           "connection_timeout": 45,
           "query_timeout": 600,
