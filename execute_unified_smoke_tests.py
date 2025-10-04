@@ -28,6 +28,7 @@ from openpyxl import load_workbook
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.core.test_executor import TestExecutor
+from src.tests.static_postgresql_smoke_tests import StaticPostgreSQLSmokeTests
 
 
 @dataclass
@@ -119,8 +120,14 @@ def execute_smoke_tests(excel_file: str):
     print(f"📊 Successfully loaded {len(test_cases)} smoke test cases")
     print()
     
-    # Initialize test executor
-    executor = TestExecutor()
+    # Check if we should use static tests (default to static for production stability)
+    use_static_tests = os.environ.get("USE_STATIC_SMOKE_TESTS", "true").lower() in ["true", "1", "yes"]
+    test_method = "🔒 STATIC IMMUTABLE" if use_static_tests else "🏗️  INSTANCE BASED"
+    print(f"🧪 Test Method: {test_method}")
+    print()
+    
+    # Initialize test executor with appropriate method
+    executor = TestExecutor(use_static_tests=use_static_tests)
     
     # Execute tests
     results = []
@@ -138,32 +145,90 @@ def execute_smoke_tests(excel_file: str):
         
         try:
             # Execute based on category
-            if test_case.test_category == "SETUP":
-                executor.smoke_tester.test_environment_setup()
-                status = "PASS"
-            elif test_case.test_category == "CONFIGURATION":
-                executor.smoke_tester.test_dummy_config_availability()
-                status = "PASS"
-            elif test_case.test_category == "SECURITY":
-                executor.smoke_tester.test_environment_credentials()
-                status = "PASS"
-            elif test_case.test_category == "CONNECTION":
-                executor.smoke_tester.test_postgresql_connection()
-                status = "PASS"
-            elif test_case.test_category == "QUERIES":
-                executor.smoke_tester.test_postgresql_basic_queries()
-                status = "PASS"
-            elif test_case.test_category == "PERFORMANCE":
-                executor.smoke_tester.test_postgresql_connection_performance()
-                status = "PASS"
-            elif test_case.test_category in ["TABLE_EXISTS", "TABLE_SELECT", "TABLE_ROWS", "TABLE_STRUCTURE"]:
-                # All table-related tests use basic queries for validation
-                executor.smoke_tester.test_postgresql_basic_queries()
-                status = "PASS"
+            if use_static_tests:
+                # Use static immutable tests
+                if test_case.test_category == "SETUP":
+                    result = StaticPostgreSQLSmokeTests.test_environment_setup(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                    status = "PASS"
+                elif test_case.test_category == "CONFIGURATION":
+                    result = StaticPostgreSQLSmokeTests.test_configuration_availability(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                    status = "PASS"
+                elif test_case.test_category == "SECURITY":
+                    result = StaticPostgreSQLSmokeTests.test_environment_credentials(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                    status = "PASS"
+                elif test_case.test_category == "CONNECTION":
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                    status = "PASS"
+                elif test_case.test_category == "QUERIES":
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                    status = "PASS"
+                elif test_case.test_category == "PERFORMANCE":
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection_performance(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                    status = "PASS"
+                elif test_case.test_category in ["TABLE_EXISTS", "TABLE_SELECT", "TABLE_ROWS", "TABLE_STRUCTURE"]:
+                    # All table-related tests use basic queries for validation
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                    status = "PASS"
+                else:
+                    status = "SKIP"
+                    skipped += 1
+                    print(f"   ⏭️  SKIP - Unknown category: {test_case.test_category}")
             else:
-                status = "SKIP"
-                skipped += 1
-                print(f"   ⏭️  SKIP - Unknown category: {test_case.test_category}")
+                # Use instance-based tests (legacy)
+                if test_case.test_category == "SETUP":
+                    executor.smoke_tester.test_environment_setup()
+                    status = "PASS"
+                elif test_case.test_category == "CONFIGURATION":
+                    executor.smoke_tester.test_dummy_config_availability()
+                    status = "PASS"
+                elif test_case.test_category == "SECURITY":
+                    executor.smoke_tester.test_environment_credentials()
+                    status = "PASS"
+                elif test_case.test_category == "CONNECTION":
+                    executor.smoke_tester.test_postgresql_connection()
+                    status = "PASS"
+                elif test_case.test_category == "QUERIES":
+                    executor.smoke_tester.test_postgresql_basic_queries()
+                    status = "PASS"
+                elif test_case.test_category == "PERFORMANCE":
+                    executor.smoke_tester.test_postgresql_connection_performance()
+                    status = "PASS"
+                elif test_case.test_category in ["TABLE_EXISTS", "TABLE_SELECT", "TABLE_ROWS", "TABLE_STRUCTURE"]:
+                    # All table-related tests use basic queries for validation
+                    executor.smoke_tester.test_postgresql_basic_queries()
+                    status = "PASS"
+                else:
+                    status = "SKIP"
+                    skipped += 1
+                    print(f"   ⏭️  SKIP - Unknown category: {test_case.test_category}")
             
             duration = time.time() - start_time
             

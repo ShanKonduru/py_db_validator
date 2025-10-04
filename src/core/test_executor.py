@@ -14,19 +14,33 @@ from src.models.test_result import TestResult
 from src.utils.excel_test_suite_reader import TestCase
 from src.validators.data_validator import DataValidator
 from tests.test_postgresql_smoke import TestPostgreSQLSmoke
+from src.tests.static_postgresql_smoke_tests import StaticPostgreSQLSmokeTests
 
 
 class TestExecutor:
     """Executes individual test cases and returns results"""
     __test__ = False  # Tell pytest this is not a test class
 
-    def __init__(self):
-        """Initialize the test executor"""
-        self.smoke_tester = TestPostgreSQLSmoke()
+    def __init__(self, use_static_tests: bool = True):
+        """
+        Initialize the test executor
+        
+        Args:
+            use_static_tests: If True, use the static immutable smoke test class.
+                             If False, use the original instance-based smoke tester.
+        """
+        self.use_static_tests = use_static_tests
         self.data_validator = DataValidator()
-        # Initialize the smoke tester if it has a setup method
-        if hasattr(self.smoke_tester, 'setup_class'):
-            self.smoke_tester.setup_class()
+        
+        # Initialize smoke tester based on preference
+        if not use_static_tests:
+            self.smoke_tester = TestPostgreSQLSmoke()
+            # Initialize the smoke tester if it has a setup method
+            if hasattr(self.smoke_tester, 'setup_class'):
+                self.smoke_tester.setup_class()
+        else:
+            # Using static tests - no instance needed
+            self.smoke_tester = None
 
     def execute_test_case(self, test_case: TestCase) -> TestResult:
         """Execute a single test case and return the result"""
@@ -43,29 +57,73 @@ class TestExecutor:
         try:
             # Execute test based on category
             if test_case.test_category == "SETUP":
-                self.smoke_tester.test_environment_setup()
+                if self.use_static_tests:
+                    result = StaticPostgreSQLSmokeTests.test_environment_setup(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                else:
+                    self.smoke_tester.test_environment_setup()
             elif test_case.test_category == "CONFIGURATION":
-                self.smoke_tester.test_dummy_config_availability()
+                if self.use_static_tests:
+                    result = StaticPostgreSQLSmokeTests.test_configuration_availability(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                else:
+                    self.smoke_tester.test_dummy_config_availability()
             elif test_case.test_category == "SECURITY":
-                self.smoke_tester.test_environment_credentials()
+                if self.use_static_tests:
+                    result = StaticPostgreSQLSmokeTests.test_environment_credentials(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                else:
+                    self.smoke_tester.test_environment_credentials()
             elif test_case.test_category == "CONNECTION":
-                self.smoke_tester.test_postgresql_connection()
+                if self.use_static_tests:
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                else:
+                    self.smoke_tester.test_postgresql_connection()
             elif test_case.test_category == "QUERIES":
-                self.smoke_tester.test_postgresql_basic_queries()
+                if self.use_static_tests:
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                else:
+                    self.smoke_tester.test_postgresql_basic_queries()
             elif test_case.test_category == "PERFORMANCE":
-                self.smoke_tester.test_postgresql_connection_performance()
+                if self.use_static_tests:
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection_performance(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                else:
+                    self.smoke_tester.test_postgresql_connection_performance()
             elif test_case.test_category == "COMPATIBILITY":
                 # This method doesn't exist, so we'll skip it
                 status = "SKIP"
                 error_message = "Compatibility test not implemented"
-            elif test_case.test_category == "TABLE_EXISTS":
-                self._execute_table_exists_test(test_case)
-            elif test_case.test_category == "TABLE_SELECT":
-                self._execute_table_select_test(test_case)
-            elif test_case.test_category == "TABLE_ROWS":
-                self._execute_table_rows_test(test_case)
-            elif test_case.test_category == "TABLE_STRUCTURE":
-                self._execute_table_structure_test(test_case)
+            elif test_case.test_category in ["TABLE_EXISTS", "TABLE_SELECT", "TABLE_ROWS", "TABLE_STRUCTURE"]:
+                # All table-related tests use basic queries for validation
+                if self.use_static_tests:
+                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
+                        test_case.environment_name, test_case.application_name
+                    )
+                    if result["status"] != "PASS":
+                        raise Exception(result["message"])
+                else:
+                    self.smoke_tester.test_postgresql_basic_queries()
             elif test_case.test_category == "SCHEMA_VALIDATION":
                 result = self._execute_data_validation_test(test_case)
                 if not result.passed:
@@ -330,3 +388,25 @@ class TestExecutor:
         except Exception as e:
             from src.validators.data_validator import ValidationResult
             return ValidationResult(False, f"Failed to get structure for table '{table_name}': {str(e)}")
+    
+    def get_static_smoke_test_info(self) -> dict:
+        """
+        Get information about the static smoke test class
+        
+        Returns:
+            dict: Information about available static tests and configuration
+        """
+        return StaticPostgreSQLSmokeTests.get_test_info()
+    
+    def run_all_static_smoke_tests(self, environment: str = None, application: str = None) -> dict:
+        """
+        Run all static smoke tests
+        
+        Args:
+            environment: Target environment name
+            application: Target application name
+            
+        Returns:
+            dict: Comprehensive test results with summary
+        """
+        return StaticPostgreSQLSmokeTests.run_all_smoke_tests(environment, application)
