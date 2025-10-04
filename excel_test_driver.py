@@ -107,9 +107,11 @@ def main():
     # Create test driver
     driver = ExcelTestDriver(args.excel_file)
 
-    # Load test suite
+    # Load test suite with validation
     if not driver.load_test_suite():
         print("❌ Failed to load Excel test suite")
+        print("\n💡 TIP: Run 'python validate_excel.py' to check for data validation errors")
+        print("💡 TIP: Run 'python validate_excel.py --fix-suggestions' for detailed help")
         return 1
 
     # Parse tags

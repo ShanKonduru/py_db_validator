@@ -13,6 +13,14 @@ from openpyxl.workbook.workbook import Workbook
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+# Import validation module
+try:
+    from src.validation.excel_validator import ExcelTestSuiteValidator, ValidationSeverity
+except ImportError:
+    # Fallback if validation module not available
+    ExcelTestSuiteValidator = None
+    ValidationSeverity = None
+
 
 @dataclass
 class TestCase:
@@ -84,19 +92,50 @@ class ExcelTestSuiteReader:
         self.excel_file = Path(excel_file)
         self.workbook: Optional[Workbook] = None
         self.test_cases: List[TestCase] = []
+        self.validator = ExcelTestSuiteValidator() if ExcelTestSuiteValidator else None
+        self.validation_passed = True
+        self.validation_report = ""
 
     def validate_file_exists(self) -> bool:
         """Validate that Excel file exists"""
         return self.excel_file.exists()
 
     def load_workbook(self) -> bool:
-        """Load the Excel workbook"""
+        """Load the Excel workbook with validation"""
         try:
             self.workbook = load_workbook(self.excel_file)
+            
+            # Run validation if validator is available
+            if self.validator:
+                self.validation_passed, validation_messages = self.validator.validate_test_suite(
+                    self.workbook, "SMOKE"
+                )
+                self.validation_report = self.validator.generate_validation_report()
+                
+                # Print validation report
+                print("🔍 EXCEL VALIDATION RESULTS:")
+                print(self.validation_report)
+                
+                # Count errors
+                errors = [msg for msg in validation_messages if msg.severity == ValidationSeverity.ERROR]
+                if errors:
+                    print(f"\n❌ Found {len(errors)} critical errors that must be fixed before execution!")
+                    return False
+                else:
+                    print(f"\n✅ Validation passed! File is ready for test execution.")
+            
             return True
         except Exception as e:
             print(f"❌ Error loading Excel file: {e}")
             return False
+
+    def get_validation_report(self) -> str:
+        """Get the validation report"""
+        return self.validation_report
+
+    def is_validation_passed(self) -> bool:
+        """Check if validation passed"""
+        return self.validation_passed
 
     def validate_structure(self) -> bool:
         """Validate Excel file structure"""
