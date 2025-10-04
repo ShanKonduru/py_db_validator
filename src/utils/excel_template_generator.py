@@ -49,6 +49,7 @@ class ExcelTemplateGenerator:
             {"name": "Description", "width": 40, "dropdown": False, "required": False},
             {"name": "Prerequisites", "width": 30, "dropdown": False, "required": False},
             {"name": "Tags", "width": 20, "dropdown": False, "required": False},
+            {"name": "Parameters", "width": 25, "dropdown": False, "required": False},  # New column
         ]
     
     def create_template(self, filename: str = "test_suite_template.xlsx", 
@@ -187,42 +188,126 @@ class ExcelTemplateGenerator:
                 "HIGH", "SETUP", "PASS", 30, 
                 "Validates that environment and configuration are properly set up",
                 "Configuration file or environment variables must be available",
-                "smoke,db,setup"
+                "smoke,db,setup", ""
             ],
             [
                 "TRUE", "SMOKE_PG_002", "Configuration Availability", "DUMMY", "DEV",
                 "HIGH", "CONFIGURATION", "PASS", 30,
                 "Checks if database configuration is available and accessible",
                 "Environment setup must be completed",
-                "smoke,db,config"
+                "smoke,db,config", ""
             ],
             [
                 "TRUE", "SMOKE_PG_003", "Credentials Validation", "DUMMY", "DEV",
                 "HIGH", "SECURITY", "PASS", 30,
                 "Validates database credentials and authentication",
                 "Valid credentials must be configured",
-                "smoke,db,security"
+                "smoke,db,security", ""
             ],
             [
                 "TRUE", "SMOKE_PG_004", "Database Connectivity", "DUMMY", "DEV",
                 "HIGH", "CONNECTION", "PASS", 60,
                 "Tests basic database connection functionality",
                 "Database server must be running and accessible",
-                "smoke,db,connection"
+                "smoke,db,connection", ""
             ],
             [
                 "TRUE", "SMOKE_PG_005", "Basic Database Queries", "DUMMY", "DEV",
                 "HIGH", "QUERIES", "PASS", 60,
                 "Tests basic SQL query execution capabilities",
                 "Database connection must be established",
-                "smoke,db,queries"
+                "smoke,db,queries", ""
             ],
             [
                 "FALSE", "SMOKE_PG_006", "Connection Performance", "DUMMY", "DEV",
                 "MEDIUM", "PERFORMANCE", "PASS", 30,
                 "Tests database connection performance metrics",
                 "Database must be optimized for performance testing",
-                "smoke,db,performance"
+                "smoke,db,performance", ""
+            ],
+            [
+                "TRUE", "SMOKE_PG_007", "Products Table Exists", "DUMMY", "DEV",
+                "HIGH", "TABLE_EXISTS", "PASS", 30,
+                "Verifies that the products table exists in the database",
+                "Database connection must be established",
+                "smoke,table,structure", "table_name=public.products"
+            ],
+            [
+                "TRUE", "SMOKE_PG_008", "Employees Table Exists", "DUMMY", "DEV",
+                "HIGH", "TABLE_EXISTS", "PASS", 30,
+                "Verifies that the employees table exists in the database",
+                "Database connection must be established",
+                "smoke,table,structure", "table_name=public.employees"
+            ],
+            [
+                "TRUE", "SMOKE_PG_009", "Orders Table Exists", "DUMMY", "DEV",
+                "HIGH", "TABLE_EXISTS", "PASS", 30,
+                "Verifies that the orders table exists in the database",
+                "Database connection must be established",
+                "smoke,table,structure", "table_name=public.orders"
+            ],
+            [
+                "TRUE", "SMOKE_PG_010", "Products Table Select Test", "DUMMY", "DEV",
+                "HIGH", "TABLE_SELECT", "PASS", 30,
+                "Tests SELECT operations on the products table",
+                "Products table must exist and be accessible",
+                "smoke,table,queries", "table_name=public.products"
+            ],
+            [
+                "TRUE", "SMOKE_PG_011", "Employees Table Select Test", "DUMMY", "DEV",
+                "HIGH", "TABLE_SELECT", "PASS", 30,
+                "Tests SELECT operations on the employees table",
+                "Employees table must exist and be accessible",
+                "smoke,table,queries", "table_name=public.employees"
+            ],
+            [
+                "TRUE", "SMOKE_PG_012", "Orders Table Select Test", "DUMMY", "DEV",
+                "HIGH", "TABLE_SELECT", "PASS", 30,
+                "Tests SELECT operations on the orders table",
+                "Orders table must exist and be accessible",
+                "smoke,table,queries", "table_name=public.orders"
+            ],
+            [
+                "TRUE", "SMOKE_PG_013", "Products Table Has Data", "DUMMY", "DEV",
+                "MEDIUM", "TABLE_ROWS", "PASS", 30,
+                "Verifies that the products table contains data",
+                "Products table must exist and be populated",
+                "smoke,table,data", "table_name=public.products,min_rows=1"
+            ],
+            [
+                "TRUE", "SMOKE_PG_014", "Employees Table Has Data", "DUMMY", "DEV",
+                "MEDIUM", "TABLE_ROWS", "PASS", 30,
+                "Verifies that the employees table contains data",
+                "Employees table must exist and be populated",
+                "smoke,table,data", "table_name=public.employees,min_rows=1"
+            ],
+            [
+                "TRUE", "SMOKE_PG_015", "Orders Table Has Data", "DUMMY", "DEV",
+                "MEDIUM", "TABLE_ROWS", "PASS", 30,
+                "Verifies that the orders table contains data",
+                "Orders table must exist and be populated",
+                "smoke,table,data", "table_name=public.orders,min_rows=1"
+            ],
+            [
+                "TRUE", "SMOKE_PG_016", "Products Table Structure", "DUMMY", "DEV",
+                "LOW", "TABLE_STRUCTURE", "PASS", 30,
+                "Validates products table structure and columns",
+                "Products table must exist",
+                "smoke,table,structure", "table_name=public.products"
+            ],
+            [
+                "TRUE", "SMOKE_PG_017", "Employees Table Structure", "DUMMY", "DEV",
+                "LOW", "TABLE_STRUCTURE", "PASS", 30,
+                "Validates employees table structure and columns",
+                "Employees table must exist",
+                "smoke,table,structure", "table_name=public.employees"
+            ],
+            [
+                "TRUE", "SMOKE_PG_018", "Orders Table Structure", "DUMMY", "DEV",
+                "LOW", "TABLE_STRUCTURE", "PASS", 30,
+                "Validates orders table structure and columns",
+                "Orders table must exist",
+                "smoke,table,structure", "table_name=public.orders"
             ]
         ]
         
@@ -266,13 +351,25 @@ class ExcelTemplateGenerator:
             "4. Use DROPDOWNS for columns with validation (they have colored headers)",
             "5. Required fields are marked with * in the reference sheet",
             "",
-            "📝 IMPORTANT NOTES:",
+            "�️ PARAMETERIZED TABLE TESTING:",
+            "",
+            "The Parameters column enables parameterized testing for table validation:",
+            "• TABLE_EXISTS: table_name=public.users",
+            "• TABLE_SELECT: table_name=public.products", 
+            "• TABLE_ROWS: table_name=public.orders,min_rows=10",
+            "• TABLE_STRUCTURE: table_name=public.employees",
+            "",
+            "Parameter format: key=value or key1=value1,key2=value2",
+            "Example: table_name=public.products,min_rows=5",
+            "",
+            "�📝 IMPORTANT NOTES:",
             "",
             "• Test_Case_ID must be unique within each sheet",
             "• Test_Category determines which test function will be executed",
             "• Use dropdowns to prevent data entry errors",
             "• Timeout_Seconds must be between 5-3600 seconds",
             "• Tags should be comma-separated without spaces",
+            "• Parameters column is optional for non-table tests",
             "",
             "🔍 VALIDATION:",
             "",
@@ -293,6 +390,7 @@ class ExcelTemplateGenerator:
             "• Always validate before sharing the file with others",
             "• Check the REFERENCE sheet for valid values and mappings",
             "• Use CONTROLLER sheet to manage execution of multiple test suites",
+            "• For table tests, always include schema.table_name format",
             "",
         ]
         
@@ -332,6 +430,10 @@ class ExcelTemplateGenerator:
             ["CONNECTION", "test_postgresql_connection()", "✅ Available", "Tests database connection"],
             ["QUERIES", "test_postgresql_basic_queries()", "✅ Available", "Tests SQL query execution"],
             ["PERFORMANCE", "test_postgresql_connection_performance()", "✅ Available", "Tests connection performance"],
+            ["TABLE_EXISTS", "smoke_test_table_exists()", "✅ Available", "Validates table existence (requires table_name parameter)"],
+            ["TABLE_SELECT", "smoke_test_table_select_possible()", "✅ Available", "Tests table SELECT access (requires table_name parameter)"],
+            ["TABLE_ROWS", "smoke_test_table_has_rows()", "✅ Available", "Validates table has data (requires table_name, optional min_rows parameter)"],
+            ["TABLE_STRUCTURE", "smoke_test_table_structure()", "✅ Available", "Analyzes table structure (requires table_name parameter)"],
             ["COMPATIBILITY", "test_compatibility()", "⚠️ Not implemented", "Backwards compatibility testing"],
             ["MONITORING", "test_monitoring()", "🔜 Future", "System monitoring tests"],
             ["BACKUP", "test_backup_restore()", "🔜 Future", "Backup and restore tests"],
@@ -363,6 +465,9 @@ class ExcelTemplateGenerator:
             "Description: Max 500 characters",
             "Prerequisites: Max 1000 characters",
             "Tags: Comma-separated, no spaces in individual tags",
+            "Parameters: Optional, format: key=value or key1=value1,key2=value2",
+            "          • For table tests: table_name=schema.tablename",
+            "          • TABLE_ROWS also supports: min_rows=number",
         ]
         
         for i, req in enumerate(requirements, row + 4):

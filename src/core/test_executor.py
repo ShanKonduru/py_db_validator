@@ -17,6 +17,7 @@ from tests.test_postgresql_smoke import TestPostgreSQLSmoke
 
 class TestExecutor:
     """Executes individual test cases and returns results"""
+    __test__ = False  # Tell pytest this is not a test class
 
     def __init__(self):
         """Initialize the test executor"""

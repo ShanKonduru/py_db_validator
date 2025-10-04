@@ -18,11 +18,13 @@ sys.path.insert(0, str(src_path))
 try:
     from utils.json_config_reader import JsonConfigReader
     from connectors.postgresql_connector import PostgreSQLConnector
+    from utils.excel_test_suite_reader import TestCase
 except ImportError:
     # Fallback for different import scenarios
     sys.path.insert(0, str(project_root))
     from src.utils.json_config_reader import JsonConfigReader
     from src.connectors.postgresql_connector import PostgreSQLConnector
+    from src.utils.excel_test_suite_reader import TestCase
 
 
 class TestPostgreSQLSmoke:
@@ -363,7 +365,198 @@ class TestPostgreSQLSmoke:
             connector.disconnect()
 
 
-# Standalone smoke test function for backwards compatibility
+# ============================================================================
+# Table-Specific Test Functions (New)
+# These are called by the Excel test driver, not directly by pytest
+# ============================================================================
+
+def smoke_test_table_exists(test_case: 'TestCase') -> dict:
+    """Test if a specified table exists in the database"""
+    table_name = test_case.get_parameter("table_name", "users")
+    
+    try:
+        test_suite = TestPostgreSQLSmoke()
+        
+        # First ensure we can connect
+        connection = test_suite._get_database_connection()
+        if not connection:
+            return {
+                "status": "FAIL",
+                "message": f"Failed to connect to database to check table '{table_name}'"
+            }
+        
+        # Check if table exists
+        cursor = connection.cursor()
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT 1 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = %s
+            );
+        """, (table_name,))
+        
+        table_exists = cursor.fetchone()[0]
+        cursor.close()
+        connection.close()
+        
+        if table_exists:
+            return {
+                "status": "PASS", 
+                "message": f"Table '{table_name}' exists in database"
+            }
+        else:
+            return {
+                "status": "FAIL",
+                "message": f"Table '{table_name}' does not exist in database"
+            }
+            
+    except Exception as e:
+        return {
+            "status": "FAIL",
+            "message": f"Error checking table existence for '{table_name}': {str(e)}"
+        }
+
+
+def smoke_test_table_select_possible(test_case: 'TestCase') -> dict:
+    """Test if SELECT operations are possible on a specified table"""
+    table_name = test_case.get_parameter("table_name", "users")
+    
+    try:
+        test_suite = TestPostgreSQLSmoke()
+        
+        # First ensure we can connect
+        connection = test_suite._get_database_connection()
+        if not connection:
+            return {
+                "status": "FAIL",
+                "message": f"Failed to connect to database to test SELECT on table '{table_name}'"
+            }
+        
+        # Try to perform a SELECT operation
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name} LIMIT 1;")
+        result = cursor.fetchone()
+        cursor.close()
+        connection.close()
+        
+        return {
+            "status": "PASS",
+            "message": f"SELECT operation successful on table '{table_name}'"
+        }
+        
+    except Exception as e:
+        return {
+            "status": "FAIL", 
+            "message": f"SELECT operation failed on table '{table_name}': {str(e)}"
+        }
+
+
+def smoke_test_table_has_rows(test_case: 'TestCase') -> dict:
+    """Test if a specified table has rows"""
+    table_name = test_case.get_parameter("table_name", "users")
+    min_rows = int(test_case.get_parameter("min_rows", "1"))
+    
+    try:
+        test_suite = TestPostgreSQLSmoke()
+        
+        # First ensure we can connect
+        connection = test_suite._get_database_connection()
+        if not connection:
+            return {
+                "status": "FAIL",
+                "message": f"Failed to connect to database to check rows in table '{table_name}'"
+            }
+        
+        # Count rows in table
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name};")
+        row_count = cursor.fetchone()[0]
+        cursor.close()
+        connection.close()
+        
+        if row_count >= min_rows:
+            return {
+                "status": "PASS",
+                "message": f"Table '{table_name}' has {row_count} rows (minimum required: {min_rows})"
+            }
+        else:
+            return {
+                "status": "FAIL",
+                "message": f"Table '{table_name}' has only {row_count} rows (minimum required: {min_rows})"
+            }
+            
+    except Exception as e:
+        return {
+            "status": "FAIL",
+            "message": f"Error checking row count for table '{table_name}': {str(e)}"
+        }
+
+
+def smoke_test_table_structure(test_case: 'TestCase') -> dict:
+    """Test the structure of a specified table"""
+    table_name = test_case.get_parameter("table_name", "users")
+    expected_columns = test_case.get_parameter("expected_columns", "").split(",")
+    expected_columns = [col.strip() for col in expected_columns if col.strip()]
+    
+    try:
+        test_suite = TestPostgreSQLSmoke()
+        
+        # First ensure we can connect
+        connection = test_suite._get_database_connection()
+        if not connection:
+            return {
+                "status": "FAIL",
+                "message": f"Failed to connect to database to check structure of table '{table_name}'"
+            }
+        
+        # Get table columns
+        cursor = connection.cursor()
+        cursor.execute("""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = %s
+            ORDER BY ordinal_position;
+        """, (table_name,))
+        
+        columns = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        if not columns:
+            return {
+                "status": "FAIL",
+                "message": f"Table '{table_name}' not found or has no columns"
+            }
+        
+        column_names = [col[0] for col in columns]
+        column_info = [f"{col[0]} ({col[1]})" for col in columns]
+        
+        # If specific columns were expected, check them
+        if expected_columns:
+            missing_columns = [col for col in expected_columns if col not in column_names]
+            if missing_columns:
+                return {
+                    "status": "FAIL",
+                    "message": f"Table '{table_name}' missing expected columns: {missing_columns}. Found: {column_names}"
+                }
+        
+        return {
+            "status": "PASS",
+            "message": f"Table '{table_name}' structure verified. Columns: {', '.join(column_info)}"
+        }
+        
+    except Exception as e:
+        return {
+            "status": "FAIL",
+            "message": f"Error checking structure for table '{table_name}': {str(e)}"
+        }
+
+
+# ============================================================================
+# Original Test Functions (Backwards Compatibility)
+# ============================================================================
 @pytest.mark.smoke
 @pytest.mark.db
 def test_postgresql_dummy_connection():

@@ -9,6 +9,7 @@ from typing import Optional
 @dataclass
 class TestResult:
     """Data class for test execution results"""
+    __test__ = False  # Tell pytest this is not a test class
 
     test_case_id: str
     test_case_name: str

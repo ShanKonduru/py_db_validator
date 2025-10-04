@@ -25,6 +25,7 @@ except ImportError:
 @dataclass
 class TestCase:
     """Data class representing a test case from Excel"""
+    __test__ = False  # Tell pytest this is not a test class
 
     enable: bool
     test_case_id: str
@@ -38,6 +39,7 @@ class TestCase:
     description: str
     prerequisites: str
     tags: str
+    parameters: str = ""  # New field for test parameters
 
     def get_tags_list(self) -> List[str]:
         """Get tags as a list of strings"""
@@ -48,6 +50,25 @@ class TestCase:
     def has_tag(self, tag: str) -> bool:
         """Check if test case has a specific tag"""
         return tag.lower() in [t.lower() for t in self.get_tags_list()]
+
+    def get_parameters_dict(self) -> Dict[str, str]:
+        """Get parameters as a dictionary"""
+        if not self.parameters:
+            return {}
+        
+        params = {}
+        for param in self.parameters.split(","):
+            if "=" in param:
+                key, value = param.split("=", 1)
+                params[key.strip()] = value.strip()
+            else:
+                # For simple values like table names, use a default key
+                params["table_name"] = param.strip()
+        return params
+
+    def get_parameter(self, key: str, default: str = "") -> str:
+        """Get a specific parameter value"""
+        return self.get_parameters_dict().get(key, default)
 
     def is_enabled(self) -> bool:
         """Check if test case is enabled"""
@@ -171,6 +192,7 @@ class ExcelTestSuiteReader:
             "Description",
             "Prerequisites",
             "Tags",
+            "Parameters",  # New column for test parameters
         ]
 
         # Get actual headers from first row
@@ -198,7 +220,7 @@ class ExcelTestSuiteReader:
 
         # Get headers mapping
         headers = {}
-        for col in range(1, 13):  # 12 columns expected
+        for col in range(1, 14):  # 13 columns expected (including Parameters)
             cell_value = ws.cell(row=1, column=col).value
             if cell_value:
                 headers[col] = str(cell_value).strip()
@@ -239,6 +261,7 @@ class ExcelTestSuiteReader:
                     description=str(row_data.get("Description", "")),
                     prerequisites=str(row_data.get("Prerequisites", "")),
                     tags=str(row_data.get("Tags", "")),
+                    parameters=str(row_data.get("Parameters", "")),  # New parameters field
                 )
 
                 # Basic validation

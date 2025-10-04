@@ -51,13 +51,17 @@ class ExcelTestSuiteValidator:
         "COMPATIBILITY": "test_compatibility",  # Not implemented yet
         "MONITORING": "test_monitoring",  # Future implementation
         "BACKUP": "test_backup_restore",  # Future implementation
+        "TABLE_EXISTS": "smoke_test_table_exists",  # Table existence validation
+        "TABLE_SELECT": "smoke_test_table_select_possible",  # Table SELECT accessibility
+        "TABLE_ROWS": "smoke_test_table_has_rows",  # Table data validation
+        "TABLE_STRUCTURE": "smoke_test_table_structure",  # Table structure validation
     }
     
     # Required headers in exact order
     REQUIRED_HEADERS = [
         "Enable", "Test_Case_ID", "Test_Case_Name", "Application_Name",
         "Environment_Name", "Priority", "Test_Category", "Expected_Result", 
-        "Timeout_Seconds", "Description", "Prerequisites", "Tags"
+        "Timeout_Seconds", "Description", "Prerequisites", "Tags", "Parameters"
     ]
     
     # Field constraints
