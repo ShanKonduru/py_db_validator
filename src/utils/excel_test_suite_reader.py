@@ -87,9 +87,10 @@ class TestCase:
 class ExcelTestSuiteReader:
     """Reads and validates Excel test suite files"""
 
-    def __init__(self, excel_file: str):
-        """Initialize with Excel file path"""
+    def __init__(self, excel_file: str, sheet_name: str = "SMOKE"):
+        """Initialize with Excel file path and sheet name"""
         self.excel_file = Path(excel_file)
+        self.sheet_name = sheet_name
         self.workbook: Optional[Workbook] = None
         self.test_cases: List[TestCase] = []
         self.validator = ExcelTestSuiteValidator() if ExcelTestSuiteValidator else None
@@ -105,15 +106,21 @@ class ExcelTestSuiteReader:
         try:
             self.workbook = load_workbook(self.excel_file)
             
+            # Check if sheet exists
+            if self.sheet_name not in self.workbook.sheetnames:
+                print(f"❌ Sheet '{self.sheet_name}' not found in workbook")
+                print(f"   Available sheets: {', '.join(self.workbook.sheetnames)}")
+                return False
+            
             # Run validation if validator is available
             if self.validator:
                 self.validation_passed, validation_messages = self.validator.validate_test_suite(
-                    self.workbook, "SMOKE"
+                    self.workbook, self.sheet_name
                 )
                 self.validation_report = self.validator.generate_validation_report()
                 
                 # Print validation report
-                print("🔍 EXCEL VALIDATION RESULTS:")
+                print(f"🔍 EXCEL VALIDATION RESULTS (Sheet: {self.sheet_name}):")
                 print(self.validation_report)
                 
                 # Count errors
@@ -142,12 +149,13 @@ class ExcelTestSuiteReader:
         if not self.workbook:
             return False
 
-        # Check if SMOKE sheet exists
-        if "SMOKE" not in self.workbook.sheetnames:
-            print("❌ Missing required 'SMOKE' sheet in Excel file")
+        # Check if specified sheet exists
+        if self.sheet_name not in self.workbook.sheetnames:
+            print(f"❌ Missing required '{self.sheet_name}' sheet in Excel file")
+            print(f"   Available sheets: {', '.join(self.workbook.sheetnames)}")
             return False
 
-        ws = self.workbook["SMOKE"]
+        ws = self.workbook[self.sheet_name]
 
         # Expected headers
         expected_headers = [
@@ -185,7 +193,7 @@ class ExcelTestSuiteReader:
         if not self.workbook:
             return False
 
-        ws = self.workbook["SMOKE"]
+        ws = self.workbook[self.sheet_name]
         self.test_cases = []
 
         # Get headers mapping

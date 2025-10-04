@@ -37,6 +37,26 @@ class TestResult:
         """Check if the test was skipped"""
         return self.status == "SKIP"
 
+    @property
+    def execution_time(self) -> str:
+        """Get formatted execution time for compatibility with reports"""
+        return f"{self.duration_seconds:.2f}s"
+
+    @property 
+    def test_id(self) -> str:
+        """Get test ID for compatibility with reports"""
+        return self.test_case_id
+
+    @property
+    def description(self) -> str:
+        """Get test description for compatibility with reports"""
+        return self.test_case_name
+
+    @property
+    def message(self) -> str:
+        """Get error message for compatibility with reports"""
+        return self.error_message or ""
+
     def to_dict(self) -> dict:
         """Convert TestResult to dictionary"""
         return {

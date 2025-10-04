@@ -19,29 +19,30 @@ from src.reporting.markdown_report_generator import MarkdownReportGenerator
 class ExcelTestDriver:
     """Excel-driven test execution engine"""
 
-    def __init__(self, excel_file: str = "sdm_test_suite.xlsx"):
+    def __init__(self, excel_file: str = "sdm_test_suite.xlsx", sheet_name: str = "SMOKE"):
         """Initialize the test driver"""
         self.excel_file = excel_file
-        self.reader = ExcelTestSuiteReader(excel_file)
+        self.sheet_name = sheet_name
+        self.reader = ExcelTestSuiteReader(excel_file, sheet_name=sheet_name)
         self.executor = TestExecutor()
         self.results: List[TestResult] = []
         self.execution_id = f"RUN_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     def load_test_suite(self) -> bool:
         """Load the Excel test suite"""
-        print(f"📊 Loading Excel test suite: {self.excel_file}")
+        print(f"📊 Loading Excel test suite: {self.excel_file} (Sheet: {self.sheet_name})")
         
         try:
             test_cases = self.reader.get_all_test_cases()
             if not test_cases:
-                print("❌ No test cases found in Excel file")
+                print(f"❌ No test cases found in Excel file sheet '{self.sheet_name}'")
                 return False
             
             # Print summary
             enabled_count = sum(1 for tc in test_cases if tc.enable)
             disabled_count = len(test_cases) - enabled_count
             
-            print(f"✅ Successfully loaded {len(test_cases)} test cases")
+            print(f"✅ Successfully loaded {len(test_cases)} test cases from '{self.sheet_name}' sheet")
             print(f"   - Enabled: {enabled_count}")
             print(f"   - Disabled: {disabled_count}")
             

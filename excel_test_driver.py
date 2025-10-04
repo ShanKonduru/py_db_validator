@@ -2,6 +2,15 @@
 """
 Excel-Driven Test Suite Driver
 Executes PostgreSQL smoke tests based on sdm_test_suite.xlsx configuration
+
+Now supports both single-sheet and multi-sheet execution modes:
+- Single Sheet: Traditional execution from specific sheet (SMOKE, etc.)
+- Multi-Sheet: Controller-based execution from multiple sheets via CONTROLLER sheet
+
+Usage:
+  python excel_test_driver.py                              # Single sheet mode (SMOKE)
+  python excel_test_driver.py --multi-sheet                # Multi-sheet controller mode
+  python excel_test_driver.py --sheet SMOKE --reports      # Specific sheet with reports
 """
 import sys
 import argparse
@@ -77,6 +86,19 @@ Examples:
     )
 
     parser.add_argument(
+        "--sheet",
+        "-s",
+        help="Specify sheet name to execute (SMOKE, INTEGRATION, etc.). Default: SMOKE",
+    )
+
+    parser.add_argument(
+        "--multi-sheet",
+        "-m",
+        action="store_true",
+        help="Use multi-sheet controller mode (executes based on CONTROLLER sheet)",
+    )
+
+    parser.add_argument(
         "--list-tests",
         "-l",
         action="store_true",
@@ -104,8 +126,42 @@ def main():
     parser = create_argument_parser()
     args = parser.parse_args()
 
-    # Create test driver
-    driver = ExcelTestDriver(args.excel_file)
+    # Check for multi-sheet mode
+    if args.multi_sheet:
+        print("🔄 Multi-sheet mode detected - delegating to multi_sheet_test_driver.py")
+        
+        # Build command for multi-sheet driver
+        import subprocess
+        cmd = [sys.executable, "multi_sheet_test_driver.py"]
+        
+        # Pass through relevant arguments
+        if args.excel_file != "sdm_test_suite.xlsx":
+            cmd.extend(["--excel-file", args.excel_file])
+        if args.environment:
+            cmd.extend(["--environment", args.environment])
+        if args.application:
+            cmd.extend(["--application", args.application])
+        if args.priority:
+            cmd.extend(["--priority", args.priority])
+        if args.category:
+            cmd.extend(["--category", args.category])
+        if args.tags:
+            cmd.extend(["--tags", args.tags])
+        if args.test_ids:
+            cmd.extend(["--test-ids", args.test_ids])
+        if args.reports:
+            cmd.append("--reports")
+        if args.report_dir != "test_reports":
+            cmd.extend(["--report-dir", args.report_dir])
+        
+        print(f"🚀 Executing: {' '.join(cmd)}")
+        result = subprocess.run(cmd)
+        return result.returncode
+
+    # Single sheet mode - original behavior
+    # Create test driver with specific sheet if provided
+    sheet_name = args.sheet or "SMOKE"
+    driver = ExcelTestDriver(args.excel_file, sheet_name=sheet_name)
 
     # Load test suite with validation
     if not driver.load_test_suite():

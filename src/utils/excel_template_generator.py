@@ -52,13 +52,15 @@ class ExcelTemplateGenerator:
         ]
     
     def create_template(self, filename: str = "test_suite_template.xlsx", 
-                       include_sample_data: bool = True) -> bool:
+                       include_sample_data: bool = True,
+                       include_controller: bool = True) -> bool:
         """
         Create Excel template with data validation dropdowns
         
         Args:
             filename: Output Excel file name
             include_sample_data: Whether to include sample test data
+            include_controller: Whether to include CONTROLLER sheet
             
         Returns:
             True if successful, False otherwise
@@ -78,6 +80,10 @@ class ExcelTemplateGenerator:
             # Add sample data if requested
             if include_sample_data:
                 self._add_sample_data(ws)
+            
+            # Create controller sheet if requested
+            if include_controller:
+                self._create_controller_sheet(wb)
             
             # Create instructions worksheet
             self._create_instructions_worksheet(wb)
@@ -242,14 +248,27 @@ class ExcelTemplateGenerator:
             "",
             "🎯 HOW TO USE THIS TEMPLATE:",
             "",
-            "1. Use the 'SMOKE' worksheet to define your test cases",
-            "2. Fill in each row with test case details",
-            "3. Use DROPDOWNS for columns with validation (they have blue headers)",
-            "4. Required fields are marked with * in the reference sheet",
+            "🎛️ CONTROLLER SHEET - MULTI-SHEET EXECUTION:",
+            "",
+            "The CONTROLLER sheet allows you to enable/disable entire test sheets for execution:",
+            "• Enable=TRUE: Include sheet in test execution",
+            "• Enable=FALSE: Skip sheet during execution", 
+            "• Sheet_Name: Name of the test sheet (SMOKE, INTEGRATION, etc.)",
+            "• Description: Brief description of what the sheet tests",
+            "• Priority: Execution priority (HIGH, MEDIUM, LOW)",
+            "",
+            "Multi-sheet execution: python excel_test_driver.py --multi-sheet --reports",
+            "Single sheet execution: python excel_test_driver.py --sheet SMOKE --reports",
+            "",
+            "1. Use the 'CONTROLLER' sheet to enable/disable test sheet execution",
+            "2. Use individual sheets (SMOKE, etc.) to define your test cases",
+            "3. Fill in each row with test case details",
+            "4. Use DROPDOWNS for columns with validation (they have colored headers)",
+            "5. Required fields are marked with * in the reference sheet",
             "",
             "📝 IMPORTANT NOTES:",
             "",
-            "• Test_Case_ID must be unique (e.g., SMOKE_PG_001, SMOKE_PG_002)",
+            "• Test_Case_ID must be unique within each sheet",
             "• Test_Category determines which test function will be executed",
             "• Use dropdowns to prevent data entry errors",
             "• Timeout_Seconds must be between 5-3600 seconds",
@@ -263,7 +282,8 @@ class ExcelTemplateGenerator:
             "",
             "🚀 EXECUTION:",
             "",
-            "• Run 'python excel_test_driver.py --reports' to execute tests",
+            "• Run 'python excel_test_driver.py --multi-sheet --reports' for multi-sheet execution",
+            "• Use 'python excel_test_driver.py --reports' for single sheet (SMOKE) execution",
             "• Use filters like --priority HIGH or --category CONNECTION",
             "• Generated reports will be saved in test_reports/ directory",
             "",
@@ -272,6 +292,7 @@ class ExcelTemplateGenerator:
             "• Copy existing rows and modify instead of typing from scratch",
             "• Always validate before sharing the file with others",
             "• Check the REFERENCE sheet for valid values and mappings",
+            "• Use CONTROLLER sheet to manage execution of multiple test suites",
             "",
         ]
         
@@ -353,6 +374,100 @@ class ExcelTemplateGenerator:
         ws.column_dimensions['C'].width = 20
         ws.column_dimensions['D'].width = 35
     
+    def _create_controller_sheet(self, wb):
+        """Create CONTROLLER sheet for managing test sheet execution"""
+        ws = wb.create_sheet("CONTROLLER")
+        
+        # Header styling
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="D63384", end_color="D63384", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Controller headers
+        controller_headers = [
+            {"name": "Enable", "width": 12},
+            {"name": "Sheet_Name", "width": 20},
+            {"name": "Description", "width": 40},
+            {"name": "Priority", "width": 15}
+        ]
+        
+        # Add headers
+        for col_idx, col_def in enumerate(controller_headers, 1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.value = col_def["name"]
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+            
+            # Set column width
+            column_letter = get_column_letter(col_idx)
+            ws.column_dimensions[column_letter].width = col_def["width"]
+        
+        # Add sample controller data
+        controller_data = [
+            ["TRUE", "SMOKE", "PostgreSQL smoke tests - basic connectivity and functionality", "HIGH"],
+            ["FALSE", "INTEGRATION", "Integration tests with external systems", "MEDIUM"],
+            ["FALSE", "PERFORMANCE", "Performance and load testing suite", "LOW"],
+            ["FALSE", "SECURITY", "Security and penetration testing", "HIGH"],
+            ["FALSE", "REGRESSION", "Full regression test suite", "MEDIUM"]
+        ]
+        
+        # Add sample data
+        for row_idx, row_data in enumerate(controller_data, 2):
+            for col_idx, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                cell.value = value
+                
+                # Add subtle styling to data rows
+                if row_idx % 2 == 0:
+                    cell.fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+        
+        # Add data validation for Enable column
+        enable_dv = DataValidation(
+            type="list",
+            formula1='"TRUE,FALSE"',
+            allow_blank=False
+        )
+        enable_dv.error = "Must be TRUE or FALSE"
+        enable_dv.errorTitle = "Invalid Enable Value"
+        enable_dv.prompt = "Select TRUE to enable sheet execution, FALSE to disable"
+        enable_dv.promptTitle = "Enable Sheet Execution"
+        
+        # Apply to Enable column (A2:A1000)
+        enable_dv.add("A2:A1000")
+        ws.add_data_validation(enable_dv)
+        
+        # Add data validation for Priority column
+        priority_dv = DataValidation(
+            type="list",
+            formula1='"HIGH,MEDIUM,LOW"',
+            allow_blank=True
+        )
+        priority_dv.error = "Must be HIGH, MEDIUM, or LOW"
+        priority_dv.errorTitle = "Invalid Priority"
+        priority_dv.prompt = "Select execution priority for this sheet"
+        priority_dv.promptTitle = "Sheet Priority"
+        
+        # Apply to Priority column (D2:D1000)
+        priority_dv.add("D2:D1000")
+        ws.add_data_validation(priority_dv)
+        
+        # Freeze header row
+        ws.freeze_panes = "A2"
+        
+        # Don't insert rows - keep headers in row 1 for MultiSheetTestController compatibility
+        # The MultiSheetTestController expects headers in row 1
+        
+        # Add a note in cell A1 of INSTRUCTIONS sheet instead of modifying CONTROLLER structure
+        # The CONTROLLER sheet should maintain its simple structure for programmatic access
+    
     def update_existing_file(self, filename: str) -> bool:
         """
         Update an existing Excel file to add data validation dropdowns
@@ -403,21 +518,23 @@ def main():
     """Main function for testing"""
     generator = ExcelTemplateGenerator()
     
-    # Create template with sample data
-    print("Creating Excel template with data validation dropdowns...")
-    success = generator.create_template("test_suite_template_with_dropdowns.xlsx", True)
+    # Create template with sample data and controller
+    print("Creating Excel template with data validation dropdowns and CONTROLLER sheet...")
+    success = generator.create_template("test_suite_template_with_controller.xlsx", True, True)
     
     if success:
         print("\n🎉 Template created successfully!")
         print("\n📋 What was created:")
         print("• SMOKE worksheet with data validation dropdowns")
+        print("• CONTROLLER worksheet for managing test sheet execution")
         print("• INSTRUCTIONS worksheet with usage guide")
         print("• REFERENCE worksheet with valid values and function mappings")
         print("\n💡 Next steps:")
         print("1. Open the Excel file and try the dropdowns")
-        print("2. Copy/modify the sample data for your tests")
-        print("3. Validate with: python validate_excel.py test_suite_template_with_dropdowns.xlsx")
-        print("4. Execute with: python excel_test_driver.py --excel-file test_suite_template_with_dropdowns.xlsx --reports")
+        print("2. Use the CONTROLLER sheet to enable/disable test sheets")
+        print("3. Copy/modify the sample data for your tests")
+        print("4. Validate with: python validate_excel.py test_suite_template_with_controller.xlsx")
+        print("5. Execute with: python excel_test_driver.py --excel-file test_suite_template_with_controller.xlsx --multi-sheet --reports")
 
 
 if __name__ == "__main__":
