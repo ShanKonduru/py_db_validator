@@ -1,15 +1,50 @@
-pytest
-pytest-html
-pytest-cov
-pytest-mock
-pytest-xdist
+# ================================================================
+# Multi-Database Data Validation Framework - Requirements
+# ================================================================
+# Project: py_db_validator
+# Purpose: Cross-platform database validation and testing framework
+# Supports: PostgreSQL, Oracle, SQL Server, and other databases
+# Updated: October 4, 2025
+# ================================================================
 
-oracledb
-pyodbc
-psycopg2
-python-dotenv
-openpyxl
+# ================================================================
+# TESTING FRAMEWORK
+# ================================================================
+# Core testing framework and plugins
+pytest>=8.0.0              # Main testing framework
+pytest-html>=4.1.1         # HTML test report generation
+pytest-cov>=7.0.0          # Code coverage analysis
+pytest-mock>=3.15.0        # Mock objects for testing
+pytest-xdist>=3.8.0        # Parallel test execution
 
-# Streamlit Database Configuration Editor Requirements
-streamlit>=1.28.0
-pandas>=2.0.0
+# ================================================================
+# DATABASE CONNECTIVITY
+# ================================================================
+# Database drivers and connectors
+psycopg2-binary>=2.9.10    # PostgreSQL adapter (binary for easy install)
+oracledb>=2.0.0             # Oracle database connector
+pyodbc>=5.0.0               # SQL Server and other ODBC databases
+
+# ================================================================
+# CORE DATA PROCESSING
+# ================================================================
+# Essential data manipulation and configuration
+python-dotenv>=1.0.0       # Environment variable management
+openpyxl>=3.1.0             # Excel file reading/writing for test suites
+pandas>=2.0.0               # Data analysis and manipulation
+
+# ================================================================
+# USER INTERFACE (OPTIONAL)
+# ================================================================
+# Streamlit-based database configuration editor
+streamlit>=1.28.0           # Web UI framework for configuration
+# Note: Streamlit dependencies are optional for core validation
+
+# ================================================================
+# DEVELOPMENT DEPENDENCIES (if needed)
+# ================================================================
+# Uncomment below for development environment
+# black>=23.0.0             # Code formatting
+# flake8>=7.0.0             # Code linting
+# mypy>=1.0.0               # Type checking
+# pre-commit>=3.0.0         # Git hooks for code quality
