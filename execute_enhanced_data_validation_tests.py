@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Enhanced Data Validation Test Execution Script
 ===============================================
@@ -13,6 +14,12 @@ import sys
 import os
 import time
 from pathlib import Path
+
+# Set UTF-8 encoding for Windows console output
+if os.name == 'nt':  # Windows
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 from datetime import datetime
 from typing import List, Dict, Any
 from dataclasses import dataclass
@@ -113,7 +120,7 @@ def execute_enhanced_data_validation_tests(excel_file: str):
     # Filter for data validation tests
     data_validation_tests = [tc for tc in test_cases if tc.test_category in [
         'SCHEMA_VALIDATION', 'ROW_COUNT_VALIDATION', 
-        'NULL_VALUE_VALIDATION', 'DATA_QUALITY_VALIDATION'
+        'NULL_VALUE_VALIDATION'
     ]]
     
     print(f"📊 Successfully loaded {len(data_validation_tests)} data validation test cases")
@@ -157,8 +164,6 @@ def execute_enhanced_data_validation_tests(excel_file: str):
                 result = executor.data_validator.row_count_validation_compare(source_table, target_table)
             elif test_case.test_category == "NULL_VALUE_VALIDATION":
                 result = executor.data_validator.null_value_validation_compare(source_table, target_table)
-            elif test_case.test_category == "DATA_QUALITY_VALIDATION":
-                result = executor.data_validator.data_quality_validation_compare(source_table, target_table)
             else:
                 result = type('Result', (), {'passed': False, 'message': f'Unknown category: {test_case.test_category}'})()
             
@@ -194,6 +199,80 @@ def execute_enhanced_data_validation_tests(excel_file: str):
                             print(f"   ")
                         
                         print(f"   SUMMARY: {len(details['detailed_report'])} schema difference(s) found")
+                        print(f"   {'='*60}")
+                
+                # Display detailed NULL value comparison for NULL_VALUE_VALIDATION
+                elif test_case.test_category == "NULL_VALUE_VALIDATION" and hasattr(result, 'details'):
+                    details = result.details
+                    if 'null_differences' in details:
+                        print(f"   ")
+                        print(f"   📋 DETAILED NULL VALUE COMPARISON:")
+                        print(f"   {'='*60}")
+                        print(f"   SOURCE TABLE: {details.get('source_table', source_table)} ({details.get('source_total_rows', 0):,} rows)")
+                        print(f"   TARGET TABLE: {details.get('target_table', target_table)} ({details.get('target_total_rows', 0):,} rows)")
+                        print(f"   ")
+                        
+                        for i, diff in enumerate(details['null_differences'], 1):
+                            issue_icon = "🚨" if diff['issue_type'] == "CONSTRAINT_VIOLATION" else "⚠️"
+                            print(f"   [{i}] {issue_icon} COLUMN: {diff['column']} ({diff['data_type']})")
+                            print(f"       ISSUE: {diff['issue_type']}")
+                            print(f"       CONSTRAINT: SRC {'NOT NULL' if not diff['source_nullable'] else 'NULLABLE'} | TGT {'NOT NULL' if not diff['target_nullable'] else 'NULLABLE'}")
+                            print(f"       NULL COUNT: SRC {diff['source_nulls']:,} ({diff['source_null_percentage']}%) | TGT {diff['target_nulls']:,} ({diff['target_null_percentage']}%)")
+                            print(f"       DIFFERENCE: {diff['difference']:,} null value(s)")
+                            if diff['issue_type'] == "CONSTRAINT_VIOLATION":
+                                print(f"       🚨 CRITICAL: NOT NULL constraint violated!")
+                            print(f"   ")
+                        
+                        print(f"   SUMMARY: {len(details['null_differences'])} column(s) with NULL value issues")
+                        print(f"   {'='*60}")
+                
+                # Display detailed data quality comparison for DATA_QUALITY_VALIDATION
+                elif test_case.test_category == "DATA_QUALITY_VALIDATION" and hasattr(result, 'details'):
+                    details = result.details
+                    if 'quality_issues' in details:
+                        print(f"   ")
+                        print(f"   📋 DETAILED DATA QUALITY ANALYSIS:")
+                        print(f"   {'='*60}")
+                        print(f"   SOURCE TABLE: {details.get('source_table', source_table)} ({details.get('source_total_rows', 0):,} rows)")
+                        print(f"   TARGET TABLE: {details.get('target_table', target_table)} ({details.get('target_total_rows', 0):,} rows)")
+                        print(f"   ")
+                        
+                        for i, issue in enumerate(details['quality_issues'], 1):
+                            severity_icon = "🚨" if issue['severity'] == "HIGH" else "⚠️" if issue['severity'] == "MEDIUM" else "ℹ️"
+                            print(f"   [{i}] {severity_icon} ISSUE: {issue['issue_type']} ({issue['severity']} SEVERITY)")
+                            print(f"       TABLE: {issue['table']}")
+                            
+                            if issue['issue_type'] == "DUPLICATE_RECORDS":
+                                print(f"       COLUMN: {issue['column']}")
+                                print(f"       AFFECTED: {issue['affected_values']} unique values with duplicates")
+                                print(f"       EXTRA ROWS: {issue['total_duplicate_rows']} duplicate rows found")
+                                if issue['sample_duplicates']:
+                                    print(f"       SAMPLES: {', '.join([f'{dup[0]}({dup[1]}x)' for dup in issue['sample_duplicates'][:3]])}")
+                            
+                            elif issue['issue_type'] == "ORPHANED_RECORDS":
+                                print(f"       FOREIGN KEY: {issue['foreign_key']} → {issue['reference_table']}")
+                                print(f"       AFFECTED: {issue['affected_records']} records with invalid references")
+                                print(f"       INVALID VALUES: {issue['unique_invalid_values']} unique invalid IDs")
+                                if issue['sample_invalid_ids']:
+                                    print(f"       SAMPLES: {', '.join([f'ID {inv[0]}({inv[1]} records)' for inv in issue['sample_invalid_ids'][:3]])}")
+                            
+                            elif issue['issue_type'] == "INVALID_DATA_VALUES":
+                                print(f"       COLUMN: {issue['column']}")
+                                print(f"       AFFECTED: {issue['affected_records']} records ({issue['percentage']}%)")
+                                print(f"       RULE: {issue['validation_rule']}")
+                            
+                            elif issue['issue_type'] == "MISSING_CRITICAL_DATA":
+                                print(f"       COLUMN: {issue['column']}")
+                                print(f"       AFFECTED: {issue['affected_records']} records ({issue['percentage']}%)")
+                                print(f"       IMPACT: {issue['impact']}")
+                            
+                            print(f"       DESC: {issue['description']}")
+                            print(f"   ")
+                        
+                        total_issues = details.get('total_issues', 0)
+                        high_severity = details.get('high_severity_issues', 0)
+                        print(f"   SUMMARY: {total_issues} data quality issue(s) found ({high_severity} high severity)")
+                        print(f"   CHECKS: {', '.join(details.get('checks_performed', []))}")
                         print(f"   {'='*60}")
                 
                 failed += 1

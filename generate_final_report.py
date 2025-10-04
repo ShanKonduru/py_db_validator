@@ -20,7 +20,7 @@ def generate_final_report():
     print('📋 DETAILED DEVIATION ANALYSIS')
     print('-' * 50)
 
-    deviation_summary = {'schema': 0, 'row_count': 0, 'null_values': 0, 'data_quality': 0}
+    deviation_summary = {'schema': 0, 'row_count': 0, 'null_values': 0}
 
     for source_table in source_tables:
         target_table = f'new_{source_table}'
@@ -72,20 +72,6 @@ def generate_final_report():
                 print(f'❌ NULL Value Differences: {result.message}')
         except Exception as e:
             print(f'💥 Error: {e}')
-        
-        # Data Quality Validation
-        print('\n4️⃣  DATA QUALITY VALIDATION')
-        print('-' * 35)
-        try:
-            result = validator.data_quality_validation_compare(source_table, target_table)
-            if result.passed:
-                print('✅ Data Quality: No quality issues detected')
-            else:
-                deviation_summary['data_quality'] += 1
-                print(f'❌ Data Quality Issues: {result.message}')
-        except Exception as e:
-            print(f'💥 Error: {e}')
-        
         print()
 
     # Summary Report

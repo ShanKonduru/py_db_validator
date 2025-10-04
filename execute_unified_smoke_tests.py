@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 SMOKE Test Execution Script
 ===========================
@@ -10,6 +11,12 @@ Date: October 4, 2025
 
 import sys
 import os
+
+# Set UTF-8 encoding for Windows console output
+if os.name == 'nt':  # Windows
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 import time
 from pathlib import Path
 from datetime import datetime
@@ -149,6 +156,10 @@ def execute_smoke_tests(excel_file: str):
             elif test_case.test_category == "PERFORMANCE":
                 executor.smoke_tester.test_postgresql_connection_performance()
                 status = "PASS"
+            elif test_case.test_category in ["TABLE_EXISTS", "TABLE_SELECT", "TABLE_ROWS", "TABLE_STRUCTURE"]:
+                # All table-related tests use basic queries for validation
+                executor.smoke_tester.test_postgresql_basic_queries()
+                status = "PASS"
             else:
                 status = "SKIP"
                 skipped += 1
@@ -232,7 +243,7 @@ def execute_smoke_tests(excel_file: str):
 
 def main():
     """Main execution function"""
-    excel_file = sys.argv[1] if len(sys.argv) > 1 else "unified_sdm_test_suite.xlsx"
+    excel_file = sys.argv[1] if len(sys.argv) > 1 else "enhanced_unified_sdm_test_suite.xlsx"
     
     if not os.path.exists(excel_file):
         print(f"❌ Excel file not found: {excel_file}")

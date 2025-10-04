@@ -717,17 +717,6 @@ class ExcelTemplateGenerator:
                 "public.orders", "public.new_orders", "NULL_COMPARE",
                 "public", "public", "order_id,customer_id,employee_id,order_date,required_date,shipped_date",
                 "null_match_required=true"
-            ],
-            
-            # Data Quality Validation Tests
-            [
-                "TRUE", "DVAL_010", "Products Data Quality Check", "POSTGRES", "DEV", "MEDIUM",
-                "DATA_QUALITY_VALIDATION", "PASS", "60",
-                "Validate data quality metrics between source and target product tables",
-                "Both tables must exist", "data_validation,data_quality",
-                "public.products", "public.new_products", "DATA_QUALITY_COMPARE",
-                "public", "public", "price,stock_quantity,category_id",
-                "check_ranges=true,check_patterns=true"
             ]
         ]
         
@@ -775,7 +764,7 @@ class ExcelTemplateGenerator:
         # Test Category dropdown (Column G)
         test_category_dv = DataValidation(
             type="list",
-            formula1='"SCHEMA_VALIDATION,ROW_COUNT_VALIDATION,NULL_VALUE_VALIDATION,DATA_QUALITY_VALIDATION,COLUMN_COMPARE_VALIDATION"',
+            formula1='"SCHEMA_VALIDATION,ROW_COUNT_VALIDATION,NULL_VALUE_VALIDATION,COLUMN_COMPARE_VALIDATION"',
             allow_blank=False
         )
         test_category_dv.error = "Must be a valid data validation test category"

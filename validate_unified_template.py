@@ -66,7 +66,7 @@ def validate_unified_template(excel_file: str):
 
 def main():
     """Main execution function"""
-    excel_file = sys.argv[1] if len(sys.argv) > 1 else "unified_sdm_test_suite.xlsx"
+    excel_file = sys.argv[1] if len(sys.argv) > 1 else "enhanced_unified_sdm_test_suite.xlsx"
     validate_unified_template(excel_file)
 
 

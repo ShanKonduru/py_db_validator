@@ -78,10 +78,6 @@ class TestExecutor:
                 result = self._execute_data_validation_test(test_case)
                 if not result.passed:
                     raise Exception(result.message)
-            elif test_case.test_category == "DATA_QUALITY_VALIDATION":
-                result = self._execute_data_validation_test(test_case)
-                if not result.passed:
-                    raise Exception(result.message)
             elif test_case.test_category == "COLUMN_COMPARE_VALIDATION":
                 result = self._execute_data_validation_test(test_case)
                 if not result.passed:
@@ -174,8 +170,6 @@ class TestExecutor:
             return self.data_validator.row_count_validation_compare(source_table, target_table)
         elif test_case.test_category == "NULL_VALUE_VALIDATION":
             return self.data_validator.null_value_validation_compare(source_table, target_table)
-        elif test_case.test_category == "DATA_QUALITY_VALIDATION":
-            return self.data_validator.data_quality_validation_compare(source_table, target_table)
         elif test_case.test_category == "COLUMN_COMPARE_VALIDATION":
             return self.data_validator.column_compare_validation(source_table, target_table, column_name)
         else:

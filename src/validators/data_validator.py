@@ -273,24 +273,35 @@ class DataValidator:
             connector = self._get_postgresql_connection()
             cursor = connector.connection.cursor()
             
-            # Get common columns
+            # Get common columns with their constraints
             cursor.execute("""
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_schema = 'public' AND table_name = %s
+                SELECT c.column_name, c.is_nullable, c.data_type 
+                FROM information_schema.columns c
+                WHERE c.table_schema = 'public' AND c.table_name = %s
+                ORDER BY c.ordinal_position
             """, (source_table,))
-            source_columns = [row[0] for row in cursor.fetchall()]
+            source_columns = {row[0]: {"nullable": row[1], "type": row[2]} for row in cursor.fetchall()}
             
             cursor.execute("""
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_schema = 'public' AND table_name = %s
+                SELECT c.column_name, c.is_nullable, c.data_type 
+                FROM information_schema.columns c
+                WHERE c.table_schema = 'public' AND c.table_name = %s
+                ORDER BY c.ordinal_position
             """, (full_target_table,))
-            target_columns = [row[0] for row in cursor.fetchall()]
+            target_columns = {row[0]: {"nullable": row[1], "type": row[2]} for row in cursor.fetchall()}
             
-            common_columns = set(source_columns) & set(target_columns)
+            common_columns = set(source_columns.keys()) & set(target_columns.keys())
+            
+            # Get total row counts
+            cursor.execute(f"SELECT COUNT(*) FROM {source_table}")
+            source_total = cursor.fetchone()[0]
+            
+            cursor.execute(f"SELECT COUNT(*) FROM {full_target_table}")
+            target_total = cursor.fetchone()[0]
             
             null_differences = []
             
-            for column in common_columns:
+            for column in sorted(common_columns):
                 # Count NULLs in source
                 cursor.execute(f"SELECT COUNT(*) FROM {source_table} WHERE {column} IS NULL")
                 source_nulls = cursor.fetchone()[0]
@@ -299,12 +310,39 @@ class DataValidator:
                 cursor.execute(f"SELECT COUNT(*) FROM {full_target_table} WHERE {column} IS NULL")
                 target_nulls = cursor.fetchone()[0]
                 
-                if source_nulls != target_nulls:
+                # Calculate percentages
+                source_null_pct = (source_nulls / source_total * 100) if source_total > 0 else 0
+                target_null_pct = (target_nulls / target_total * 100) if target_total > 0 else 0
+                
+                # Check for differences or constraint violations
+                has_difference = source_nulls != target_nulls
+                constraint_violation = False
+                
+                # Check if NOT NULL column has NULLs
+                source_nullable = source_columns[column]["nullable"] == "YES"
+                target_nullable = target_columns[column]["nullable"] == "YES"
+                
+                if not source_nullable and source_nulls > 0:
+                    constraint_violation = True
+                if not target_nullable and target_nulls > 0:
+                    constraint_violation = True
+                
+                if has_difference or constraint_violation:
+                    issue_type = "CONSTRAINT_VIOLATION" if constraint_violation else "NULL_COUNT_MISMATCH"
+                    
                     null_differences.append({
                         "column": column,
+                        "issue_type": issue_type,
+                        "data_type": source_columns[column]["type"],
+                        "source_nullable": source_nullable,
+                        "target_nullable": target_nullable,
                         "source_nulls": source_nulls,
                         "target_nulls": target_nulls,
-                        "difference": abs(source_nulls - target_nulls)
+                        "source_null_percentage": round(source_null_pct, 2),
+                        "target_null_percentage": round(target_null_pct, 2),
+                        "difference": abs(source_nulls - target_nulls),
+                        "source_total": source_total,
+                        "target_total": target_total
                     })
             
             connector.disconnect()
@@ -313,90 +351,32 @@ class DataValidator:
                 return ValidationResult(
                     passed=False,
                     message=f"NULL value differences found in {len(null_differences)} columns",
-                    details={"differences": null_differences, "common_columns": len(common_columns)}
+                    details={
+                        "null_differences": null_differences, 
+                        "common_columns": len(common_columns),
+                        "source_table": source_table,
+                        "target_table": full_target_table,
+                        "source_total_rows": source_total,
+                        "target_total_rows": target_total
+                    }
                 )
             else:
                 return ValidationResult(
                     passed=True,
                     message=f"NULL value validation passed for {len(common_columns)} common columns",
-                    details={"common_columns": len(common_columns)}
+                    details={
+                        "common_columns": len(common_columns),
+                        "source_table": source_table,
+                        "target_table": full_target_table,
+                        "source_total_rows": source_total,
+                        "target_total_rows": target_total
+                    }
                 )
                 
         except Exception as e:
             return ValidationResult(
                 passed=False,
                 message=f"NULL value validation failed: {str(e)}",
-                details={"error": str(e)}
-            )
-    
-    def data_quality_validation_compare(self, source_table: str, target_table: str) -> ValidationResult:
-        """Check data quality issues in target compared to source in PostgreSQL"""
-        
-        try:
-            # Add prefixes to table names
-            full_target_table = f"{self.target_table_prefix}{source_table}"
-            
-            # Connect to PostgreSQL
-            connector = self._get_postgresql_connection()
-            cursor = connector.connection.cursor()
-            
-            issues = []
-            
-            # Check for duplicates in target (assuming source has no duplicates)
-            # Get primary key column (usually first column)
-            cursor.execute("""
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_schema = 'public' AND table_name = %s
-                ORDER BY ordinal_position LIMIT 1
-            """, (full_target_table,))
-            
-            pk_result = cursor.fetchone()
-            if pk_result:
-                id_column = pk_result[0]
-                cursor.execute(f"""
-                    SELECT {id_column}, COUNT(*) as cnt 
-                    FROM {full_target_table} 
-                    GROUP BY {id_column} 
-                    HAVING COUNT(*) > 1
-                """)
-                duplicates = cursor.fetchall()
-                
-                if duplicates:
-                    issues.append(f"Found {len(duplicates)} duplicate {id_column} values in target")
-            
-            # Check for orphaned records (basic foreign key validation)
-            if target_table == "orders":
-                # Use the actual target_table with prefix for orphaned records check
-                full_orders_table = f"{self.target_table_prefix}{target_table}"
-                cursor.execute(f"""
-                    SELECT COUNT(*) FROM {full_orders_table} o 
-                    LEFT JOIN new_employees e ON o.employee_id = e.employee_id 
-                    WHERE o.employee_id IS NOT NULL AND e.employee_id IS NULL
-                """)
-                orphaned_result = cursor.fetchone()
-                if orphaned_result and orphaned_result[0] > 0:
-                    orphaned = orphaned_result[0]
-                    issues.append(f"Found {orphaned} orphaned orders with invalid employee_id")
-            
-            connector.disconnect()
-            
-            if issues:
-                return ValidationResult(
-                    passed=False,
-                    message=f"Data quality issues found: {', '.join(issues)}",
-                    details={"issues": issues}
-                )
-            else:
-                return ValidationResult(
-                    passed=True,
-                    message="Data quality validation passed",
-                    details={"checks_performed": ["duplicates", "foreign_keys"]}
-                )
-                
-        except Exception as e:
-            return ValidationResult(
-                passed=False,
-                message=f"Data quality validation failed: {str(e)}",
                 details={"error": str(e)}
             )
     

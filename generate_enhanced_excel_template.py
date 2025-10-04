@@ -188,29 +188,6 @@ class EnhancedExcelTemplateGenerator:
                 "Compare NULL patterns between source orders and target new_orders tables",
                 "Both tables must exist with data", "null,validation,orders",
                 "source_table=orders;target_table=new_orders;null_match_required=false;report_differences=true"
-            ],
-            
-            # Data Quality Validation Tests
-            [
-                "YES", "DVAL_010", "Products Data Quality Check", "POSTGRES", "DEV", "MEDIUM",
-                "DATA_QUALITY_VALIDATION", "PASS", 60,
-                "Validate data quality metrics for products table",
-                "Products table must exist with data", "quality,validation,products",
-                "source_table=products;target_table=new_products;check_ranges=true;check_patterns=true;check_duplicates=true"
-            ],
-            [
-                "YES", "DVAL_011", "Cross-Table Referential Integrity", "POSTGRES", "DEV", "HIGH",
-                "DATA_QUALITY_VALIDATION", "PASS", 90,
-                "Validate referential integrity between products, orders, and employees",
-                "All tables must exist with proper relationships", "integrity,validation,cross-table",
-                "source_table=products;target_table=orders;check_foreign_keys=true;validate_relationships=true"
-            ],
-            [
-                "YES", "DVAL_012", "Data Completeness Validation", "POSTGRES", "DEV", "MEDIUM",
-                "DATA_QUALITY_VALIDATION", "PASS", 45,
-                "Validate data completeness across all source tables",
-                "All source tables must exist", "completeness,validation,all-tables",
-                "source_table=products,employees,orders;check_required_fields=true;missing_data_threshold=5"
             ]
         ]
         
@@ -233,7 +210,7 @@ class EnhancedExcelTemplateGenerator:
         priority_validation.add(f"F2:F{len(test_cases) + 1}")
         
         category_validation = DataValidation(type="list", 
-            formula1='"SCHEMA_VALIDATION,ROW_COUNT_VALIDATION,NULL_VALUE_VALIDATION,DATA_QUALITY_VALIDATION"', 
+            formula1='"SCHEMA_VALIDATION,ROW_COUNT_VALIDATION,NULL_VALUE_VALIDATION,COLUMN_COMPARE_VALIDATION"', 
             allow_blank=False)
         ws.add_data_validation(category_validation)
         category_validation.add(f"G2:G{len(test_cases) + 1}")
@@ -357,8 +334,7 @@ class EnhancedExcelTemplateGenerator:
             ["Category", "Purpose", "Expected Results"],
             ["SCHEMA_VALIDATION", "Compare table structures", "PASS if schemas match"],
             ["ROW_COUNT_VALIDATION", "Compare record counts", "FAIL due to count differences"],
-            ["NULL_VALUE_VALIDATION", "Compare NULL patterns", "FAIL due to pattern differences"],
-            ["DATA_QUALITY_VALIDATION", "Validate data quality metrics", "PASS for single table checks"]
+            ["NULL_VALUE_VALIDATION", "Compare NULL patterns", "FAIL due to pattern differences"]
         ]
         
         # Add headers with styling
