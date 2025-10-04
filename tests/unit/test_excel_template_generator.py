@@ -251,6 +251,7 @@ class TestExcelTemplateGenerator(unittest.TestCase):
     @pytest.mark.negative
     @pytest.mark.template_generation
     @pytest.mark.error_handling
+    @patch('src.utils.excel_template_generator.Workbook')
     def test_workbook_creation_error(self, mock_workbook):
         """Test error handling when workbook creation fails"""
         mock_workbook.side_effect = Exception("Workbook creation failed")

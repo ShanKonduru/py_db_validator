@@ -86,6 +86,9 @@ class ExcelTemplateGenerator:
             if include_controller:
                 self._create_controller_sheet(wb)
             
+            # Create data validations sheet for advanced testing
+            self._create_data_validations_sheet(wb)
+            
             # Create instructions worksheet
             self._create_instructions_worksheet(wb)
             
@@ -521,7 +524,8 @@ class ExcelTemplateGenerator:
             ["FALSE", "INTEGRATION", "Integration tests with external systems", "MEDIUM"],
             ["FALSE", "PERFORMANCE", "Performance and load testing suite", "LOW"],
             ["FALSE", "SECURITY", "Security and penetration testing", "HIGH"],
-            ["FALSE", "REGRESSION", "Full regression test suite", "MEDIUM"]
+            ["FALSE", "REGRESSION", "Full regression test suite", "MEDIUM"],
+            ["TRUE", "DATAVALIDATIONS", "Advanced data validation tests - schema, row count, and data quality validation", "HIGH"]
         ]
         
         # Add sample data
@@ -573,6 +577,234 @@ class ExcelTemplateGenerator:
         # Add a note in cell A1 of INSTRUCTIONS sheet instead of modifying CONTROLLER structure
         # The CONTROLLER sheet should maintain its simple structure for programmatic access
     
+    def _create_data_validations_sheet(self, wb):
+        """Create DATAVALIDATIONS sheet for advanced src vs target testing"""
+        ws = wb.create_sheet("DATAVALIDATIONS")
+        
+        # Header styling
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="198754", end_color="198754", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Data validation headers
+        headers = [
+            "Enable", "Test_Case_ID", "Test_Case_Name", "Application_Name",
+            "Environment_Name", "Priority", "Test_Category", "Expected_Result",
+            "Timeout_Seconds", "Description", "Prerequisites", "Tags", 
+            "Source_Table", "Target_Table", "Validation_Type", "Source_Schema", 
+            "Target_Schema", "Column_Mapping", "Parameters"
+        ]
+        
+        # Create headers
+        for col_idx, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.value = header
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+        
+        # Set column widths
+        column_widths = {
+            1: 12,   # Enable
+            2: 18,   # Test_Case_ID
+            3: 30,   # Test_Case_Name
+            4: 18,   # Application_Name
+            5: 18,   # Environment_Name
+            6: 12,   # Priority
+            7: 20,   # Test_Category
+            8: 16,   # Expected_Result
+            9: 16,   # Timeout_Seconds
+            10: 40,  # Description
+            11: 30,  # Prerequisites
+            12: 20,  # Tags
+            13: 25,  # Source_Table
+            14: 25,  # Target_Table
+            15: 20,  # Validation_Type
+            16: 20,  # Source_Schema
+            17: 20,  # Target_Schema
+            18: 30,  # Column_Mapping
+            19: 25   # Parameters
+        }
+        
+        for col_idx, width in column_widths.items():
+            ws.column_dimensions[get_column_letter(col_idx)].width = width
+        
+        # Add sample data validation test cases
+        sample_data = [
+            # Schema Validation Tests
+            [
+                "TRUE", "DVAL_001", "Products Schema Validation", "POSTGRES", "DEV", "HIGH",
+                "SCHEMA_VALIDATION", "PASS", "60", 
+                "Compare schema structure between source products and target new_products tables",
+                "Both tables must exist", "data_validation,schema", 
+                "public.products", "public.new_products", "SCHEMA_COMPARE", 
+                "public", "public", "ALL_COLUMNS", "ignore_sequence=true"
+            ],
+            [
+                "TRUE", "DVAL_002", "Employees Schema Validation", "POSTGRES", "DEV", "HIGH",
+                "SCHEMA_VALIDATION", "PASS", "60",
+                "Compare schema structure between source employees and target new_employees tables",
+                "Both tables must exist", "data_validation,schema",
+                "public.employees", "public.new_employees", "SCHEMA_COMPARE",
+                "public", "public", "ALL_COLUMNS", "ignore_sequence=true"
+            ],
+            [
+                "TRUE", "DVAL_003", "Orders Schema Validation", "POSTGRES", "DEV", "HIGH",
+                "SCHEMA_VALIDATION", "PASS", "60",
+                "Compare schema structure between source orders and target new_orders tables",
+                "Both tables must exist", "data_validation,schema",
+                "public.orders", "public.new_orders", "SCHEMA_COMPARE",
+                "public", "public", "ALL_COLUMNS", "ignore_sequence=true"
+            ],
+            
+            # Row Count Validation Tests
+            [
+                "TRUE", "DVAL_004", "Products Row Count Validation", "POSTGRES", "DEV", "MEDIUM",
+                "ROW_COUNT_VALIDATION", "PASS", "30",
+                "Compare row counts between source products and target new_products tables",
+                "Both tables must exist and have data", "data_validation,row_count",
+                "public.products", "public.new_products", "ROW_COUNT_COMPARE",
+                "public", "public", "COUNT(*)", "tolerance_percent=5"
+            ],
+            [
+                "TRUE", "DVAL_005", "Employees Row Count Validation", "POSTGRES", "DEV", "MEDIUM",
+                "ROW_COUNT_VALIDATION", "PASS", "30",
+                "Compare row counts between source employees and target new_employees tables",
+                "Both tables must exist and have data", "data_validation,row_count",
+                "public.employees", "public.new_employees", "ROW_COUNT_COMPARE",
+                "public", "public", "COUNT(*)", "tolerance_percent=5"
+            ],
+            [
+                "TRUE", "DVAL_006", "Orders Row Count Validation", "POSTGRES", "DEV", "MEDIUM",
+                "ROW_COUNT_VALIDATION", "PASS", "30",
+                "Compare row counts between source orders and target new_orders tables",
+                "Both tables must exist and have data", "data_validation,row_count",
+                "public.orders", "public.new_orders", "ROW_COUNT_COMPARE",
+                "public", "public", "COUNT(*)", "tolerance_percent=5"
+            ],
+            
+            # Column-to-Column NULL Validation Tests
+            [
+                "TRUE", "DVAL_007", "Products NULL Value Validation", "POSTGRES", "DEV", "HIGH",
+                "NULL_VALUE_VALIDATION", "PASS", "45",
+                "Compare NULL patterns between source and target product tables",
+                "Both tables must exist", "data_validation,null_check",
+                "public.products", "public.new_products", "NULL_COMPARE",
+                "public", "public", "product_id,product_name,category_id,price,stock_quantity",
+                "null_match_required=true"
+            ],
+            [
+                "TRUE", "DVAL_008", "Employees NULL Value Validation", "POSTGRES", "DEV", "HIGH",
+                "NULL_VALUE_VALIDATION", "PASS", "45",
+                "Compare NULL patterns between source and target employee tables",
+                "Both tables must exist", "data_validation,null_check",
+                "public.employees", "public.new_employees", "NULL_COMPARE",
+                "public", "public", "employee_id,first_name,last_name,email,hire_date,salary",
+                "null_match_required=true"
+            ],
+            [
+                "TRUE", "DVAL_009", "Orders NULL Value Validation", "POSTGRES", "DEV", "HIGH",
+                "NULL_VALUE_VALIDATION", "PASS", "45",
+                "Compare NULL patterns between source and target order tables",
+                "Both tables must exist", "data_validation,null_check",
+                "public.orders", "public.new_orders", "NULL_COMPARE",
+                "public", "public", "order_id,customer_id,employee_id,order_date,required_date,shipped_date",
+                "null_match_required=true"
+            ],
+            
+            # Data Quality Validation Tests
+            [
+                "TRUE", "DVAL_010", "Products Data Quality Check", "POSTGRES", "DEV", "MEDIUM",
+                "DATA_QUALITY_VALIDATION", "PASS", "60",
+                "Validate data quality metrics between source and target product tables",
+                "Both tables must exist", "data_validation,data_quality",
+                "public.products", "public.new_products", "DATA_QUALITY_COMPARE",
+                "public", "public", "price,stock_quantity,category_id",
+                "check_ranges=true,check_patterns=true"
+            ]
+        ]
+        
+        # Add sample data
+        for row_idx, row_data in enumerate(sample_data, 2):
+            for col_idx, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                cell.value = value
+                
+                # Add subtle styling to data rows
+                if row_idx % 2 == 0:
+                    cell.fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+        
+        # Add data validation dropdowns for key columns
+        self._add_data_validations_dropdowns(ws)
+        
+        # Freeze header row
+        ws.freeze_panes = "A2"
+    
+    def _add_data_validations_dropdowns(self, ws):
+        """Add dropdown validations for DATAVALIDATIONS sheet"""
+        
+        # Enable dropdown (Column A)
+        enable_dv = DataValidation(
+            type="list",
+            formula1='"TRUE,FALSE"',
+            allow_blank=False
+        )
+        enable_dv.error = "Must be TRUE or FALSE"
+        enable_dv.errorTitle = "Invalid Enable Value"
+        enable_dv.add("A2:A1000")
+        ws.add_data_validation(enable_dv)
+        
+        # Priority dropdown (Column F)
+        priority_dv = DataValidation(
+            type="list",
+            formula1='"HIGH,MEDIUM,LOW"',
+            allow_blank=False
+        )
+        priority_dv.error = "Must be HIGH, MEDIUM, or LOW"
+        priority_dv.errorTitle = "Invalid Priority"
+        priority_dv.add("F2:F1000")
+        ws.add_data_validation(priority_dv)
+        
+        # Test Category dropdown (Column G)
+        test_category_dv = DataValidation(
+            type="list",
+            formula1='"SCHEMA_VALIDATION,ROW_COUNT_VALIDATION,NULL_VALUE_VALIDATION,DATA_QUALITY_VALIDATION,COLUMN_COMPARE_VALIDATION"',
+            allow_blank=False
+        )
+        test_category_dv.error = "Must be a valid data validation test category"
+        test_category_dv.errorTitle = "Invalid Test Category"
+        test_category_dv.add("G2:G1000")
+        ws.add_data_validation(test_category_dv)
+        
+        # Expected Result dropdown (Column H)
+        expected_result_dv = DataValidation(
+            type="list",
+            formula1='"PASS,FAIL"',
+            allow_blank=False
+        )
+        expected_result_dv.error = "Must be PASS or FAIL"
+        expected_result_dv.errorTitle = "Invalid Expected Result"
+        expected_result_dv.add("H2:H1000")
+        ws.add_data_validation(expected_result_dv)
+        
+        # Validation Type dropdown (Column O)
+        validation_type_dv = DataValidation(
+            type="list",
+            formula1='"SCHEMA_COMPARE,ROW_COUNT_COMPARE,NULL_COMPARE,DATA_QUALITY_COMPARE,COLUMN_COMPARE"',
+            allow_blank=False
+        )
+        validation_type_dv.error = "Must be a valid validation type"
+        validation_type_dv.errorTitle = "Invalid Validation Type"
+        validation_type_dv.add("O2:O1000")
+        ws.add_data_validation(validation_type_dv)
+
     def update_existing_file(self, filename: str) -> bool:
         """
         Update an existing Excel file to add data validation dropdowns

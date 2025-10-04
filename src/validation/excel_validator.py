@@ -55,6 +55,12 @@ class ExcelTestSuiteValidator:
         "TABLE_SELECT": "smoke_test_table_select_possible",  # Table SELECT accessibility
         "TABLE_ROWS": "smoke_test_table_has_rows",  # Table data validation
         "TABLE_STRUCTURE": "smoke_test_table_structure",  # Table structure validation
+        # Data Validation Test Categories
+        "SCHEMA_VALIDATION": "data_validation_schema_compare",  # Source vs Target schema comparison
+        "ROW_COUNT_VALIDATION": "data_validation_row_count_compare",  # Source vs Target row count comparison
+        "NULL_VALUE_VALIDATION": "data_validation_null_compare",  # Source vs Target NULL pattern comparison
+        "DATA_QUALITY_VALIDATION": "data_validation_quality_compare",  # Data quality metrics comparison
+        "COLUMN_COMPARE_VALIDATION": "data_validation_column_compare",  # Column-by-column data comparison
     }
     
     # Required headers in exact order

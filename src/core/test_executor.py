@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.models.test_result import TestResult
 from src.utils.excel_test_suite_reader import TestCase
+from src.validators.data_validator import DataValidator
 from tests.test_postgresql_smoke import TestPostgreSQLSmoke
 
 
@@ -22,6 +23,7 @@ class TestExecutor:
     def __init__(self):
         """Initialize the test executor"""
         self.smoke_tester = TestPostgreSQLSmoke()
+        self.data_validator = DataValidator()
         # Initialize the smoke tester if it has a setup method
         if hasattr(self.smoke_tester, 'setup_class'):
             self.smoke_tester.setup_class()
@@ -56,6 +58,26 @@ class TestExecutor:
                 # This method doesn't exist, so we'll skip it
                 status = "SKIP"
                 error_message = "Compatibility test not implemented"
+            elif test_case.test_category == "SCHEMA_VALIDATION":
+                result = self._execute_data_validation_test(test_case)
+                if not result.passed:
+                    raise Exception(result.message)
+            elif test_case.test_category == "ROW_COUNT_VALIDATION":
+                result = self._execute_data_validation_test(test_case)
+                if not result.passed:
+                    raise Exception(result.message)
+            elif test_case.test_category == "NULL_VALUE_VALIDATION":
+                result = self._execute_data_validation_test(test_case)
+                if not result.passed:
+                    raise Exception(result.message)
+            elif test_case.test_category == "DATA_QUALITY_VALIDATION":
+                result = self._execute_data_validation_test(test_case)
+                if not result.passed:
+                    raise Exception(result.message)
+            elif test_case.test_category == "COLUMN_COMPARE_VALIDATION":
+                result = self._execute_data_validation_test(test_case)
+                if not result.passed:
+                    raise Exception(result.message)
             else:
                 status = "SKIP"
                 error_message = f"Unknown test category: {test_case.test_category}"
@@ -127,3 +149,42 @@ class TestExecutor:
             print(f"   💬 {result.error_message}")
 
         return result
+    
+    def _execute_data_validation_test(self, test_case: TestCase):
+        """Execute data validation test based on test case details"""
+        
+        # Parse test case parameters
+        test_params = self._parse_test_params(test_case.parameters)
+        source_table = test_params.get('source_table', 'products')
+        target_table = test_params.get('target_table', 'new_products')
+        column_name = test_params.get('column_name', 'product_name')
+        
+        # Execute the appropriate validation based on category
+        if test_case.test_category == "SCHEMA_VALIDATION":
+            return self.data_validator.schema_validation_compare(source_table, target_table)
+        elif test_case.test_category == "ROW_COUNT_VALIDATION":
+            return self.data_validator.row_count_validation_compare(source_table, target_table)
+        elif test_case.test_category == "NULL_VALUE_VALIDATION":
+            return self.data_validator.null_value_validation_compare(source_table, target_table)
+        elif test_case.test_category == "DATA_QUALITY_VALIDATION":
+            return self.data_validator.data_quality_validation_compare(source_table, target_table)
+        elif test_case.test_category == "COLUMN_COMPARE_VALIDATION":
+            return self.data_validator.column_compare_validation(source_table, target_table, column_name)
+        else:
+            from src.validators.data_validator import ValidationResult
+            return ValidationResult(False, f"Unknown validation category: {test_case.test_category}")
+    
+    def _parse_test_params(self, parameters: str) -> dict:
+        """Parse test parameters from parameters string"""
+        params = {}
+        if not parameters:
+            return params
+            
+        # Simple parameter parsing from parameters
+        # Expected format: "source_table=products;target_table=new_products;column_name=product_name"
+        for param in parameters.split(';'):
+            if '=' in param:
+                key, value = param.strip().split('=', 1)
+                params[key.strip()] = value.strip()
+        
+        return params
