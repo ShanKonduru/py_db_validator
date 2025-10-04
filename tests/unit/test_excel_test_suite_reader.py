@@ -194,6 +194,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         for test_case in test_cases:
             self.assertIsInstance(test_case, TestCase)
 
+    @pytest.mark.positive
+    @pytest.mark.data_reading
+    @pytest.mark.filtering
     def test_get_enabled_test_cases(self):
         """Test getting enabled test cases only"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -210,6 +213,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         for test_case in enabled_cases:
             self.assertTrue(test_case.enable)
 
+    @pytest.mark.positive
+    @pytest.mark.data_reading
+    @pytest.mark.filtering
     def test_get_filtered_test_cases(self):
         """Test filtering test cases"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -234,6 +240,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         for test_case in connection_tests:
             self.assertEqual(test_case.test_category, 'CONNECTION')
 
+    @pytest.mark.positive
+    @pytest.mark.data_reading
+    @pytest.mark.test_cases
     def test_get_test_case_by_id(self):
         """Test getting test case by ID"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -249,6 +258,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         test_case = reader.get_test_case_by_id('NONEXISTENT')
         self.assertIsNone(test_case)
 
+    @pytest.mark.positive
+    @pytest.mark.statistical
+    @pytest.mark.data_reading
     def test_get_statistics(self):
         """Test getting test statistics"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -266,6 +278,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         self.assertEqual(stats['enabled_tests'], 6)
         self.assertEqual(stats['disabled_tests'], 1)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.functional
     def test_validation_functionality(self):
         """Test validation functionality"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -275,6 +290,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         self.assertIsInstance(reader.is_validation_passed(), bool)
         self.assertIsInstance(reader.get_validation_report(), str)
 
+    @pytest.mark.positive
+    @pytest.mark.validation
+    @pytest.mark.functional
     def test_load_and_validate(self):
         """Test combined load and validate functionality"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -282,6 +300,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         
         self.assertTrue(result)
 
+    @pytest.mark.positive
+    @pytest.mark.test_cases
+    @pytest.mark.data_structures
     def test_test_case_properties(self):
         """Test TestCase properties and methods"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -306,6 +327,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         self.assertIsInstance(test_case.get_tags_list(), list)
         self.assertIsInstance(test_case.get_parameters_dict(), dict)
 
+    @pytest.mark.positive
+    @pytest.mark.test_cases
+    @pytest.mark.tags
     def test_test_case_tags(self):
         """Test TestCase tag functionality"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -324,6 +348,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         self.assertTrue(test_case.has_tag('connection'))
         self.assertFalse(test_case.has_tag('nonexistent'))
 
+    @pytest.mark.positive
+    @pytest.mark.test_cases
+    @pytest.mark.parameters
     def test_test_case_parameters(self):
         """Test TestCase parameter functionality"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -341,6 +368,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         table_name = test_case.get_parameter('table_name', 'default')
         self.assertIsInstance(table_name, str)
 
+    @pytest.mark.positive
+    @pytest.mark.test_cases
+    @pytest.mark.filtering
     def test_test_case_filtering(self):
         """Test TestCase filtering functionality"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -356,6 +386,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         self.assertTrue(test_case.matches_filter(environment='DEV'))
         self.assertFalse(test_case.matches_filter(environment='PROD'))
 
+    @pytest.mark.edge_case
+    @pytest.mark.validation
+    @pytest.mark.error_handling
     def test_edge_cases(self):
         """Test edge cases and error conditions"""
         # Test with empty file path - should not raise exception during initialization
@@ -366,6 +399,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         with self.assertRaises(TypeError):
             reader = ExcelTestSuiteReader(None)
 
+    @pytest.mark.negative
+    @pytest.mark.edge_case
+    @pytest.mark.file_handling
     def test_empty_excel_file(self):
         """Test handling of empty Excel file"""
         empty_file = os.path.join(self.temp_dir, 'empty.xlsx')
@@ -381,6 +417,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         # Clean up
         os.remove(empty_file)
 
+    @pytest.mark.performance
+    @pytest.mark.large_dataset
+    @pytest.mark.excel_processing
     def test_large_dataset(self):
         """Test handling of large datasets"""
         large_file = os.path.join(self.temp_dir, 'large.xlsx')
@@ -425,6 +464,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         # Clean up
         os.remove(large_file)
 
+    @pytest.mark.positive
+    @pytest.mark.functional
+    @pytest.mark.data_reading
     def test_multiple_operations(self):
         """Test multiple operations on same reader"""
         reader = ExcelTestSuiteReader(self.test_file)
@@ -443,6 +485,9 @@ class TestExcelTestSuiteReader(unittest.TestCase):
         
         self.assertEqual(count1, count2)
 
+    @pytest.mark.positive
+    @pytest.mark.configuration
+    @pytest.mark.excel_processing
     def test_different_sheet_names(self):
         """Test handling different sheet names"""
         # Create file with different sheet name

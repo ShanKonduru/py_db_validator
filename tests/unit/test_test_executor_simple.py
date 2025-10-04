@@ -2,6 +2,7 @@
 Simplified unit tests for TestExecutor focusing on core functionality
 """
 import unittest
+import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime
 
@@ -32,11 +33,15 @@ class TestTestExecutorSimple(unittest.TestCase):
             tags="smoke"
         )
 
+    @pytest.mark.positive
+    @pytest.mark.initialization
     def test_initialization(self):
         """Test TestExecutor initialization"""
         self.assertIsInstance(self.executor, TestExecutor)
 
-    @patch('src.core.test_executor.TestPostgreSQLSmoke')
+    @pytest.mark.positive
+    @pytest.mark.functional
+    @pytest.mark.test_execution
     def test_execute_test_case_returns_result(self, mock_smoke_class):
         """Test that execute_test_case returns a TestResult"""
         # Mock the smoke test class

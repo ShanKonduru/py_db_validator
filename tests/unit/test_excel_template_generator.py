@@ -51,6 +51,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         for sheet_name in expected_sheets:
             self.assertIn(sheet_name, workbook.sheetnames)
 
+    @pytest.mark.negative
+    @pytest.mark.template_generation
+    @pytest.mark.error_handling
     def test_create_template_with_invalid_path(self):
         """Test template creation with invalid path"""
         invalid_path = "/definitely/invalid/path/template.xlsx"
@@ -58,6 +61,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         
         self.assertFalse(result)
 
+    @pytest.mark.negative
+    @pytest.mark.template_generation
+    @pytest.mark.error_handling
     def test_create_template_with_permission_error(self):
         """Test template creation with permission error"""
         if os.name == 'nt':  # Windows
@@ -68,6 +74,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         result = self.generator.create_template(restricted_path)
         self.assertFalse(result)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.headers
     def test_create_headers(self):
         """Test _create_headers method"""
         workbook = Workbook()
@@ -84,6 +93,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         ]
         self.assertEqual(headers, expected_headers)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.validation
     def test_add_data_validations(self):
         """Test _add_data_validations method"""
         workbook = Workbook()
@@ -98,6 +110,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         # Basic verification that data validation was attempted
         self.assertTrue(True)  # If no exception, validation was set
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.data_structures
     def test_add_sample_data(self):
         """Test _add_sample_data method"""
         workbook = Workbook()
@@ -114,6 +129,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         # Check specific sample data exists
         self.assertIsNotNone(worksheet.cell(row=2, column=1).value)  # First data row
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.documentation
     def test_create_instructions_worksheet(self):
         """Test _create_instructions_worksheet method"""
         workbook = Workbook()
@@ -127,6 +145,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         self.assertGreater(inst_sheet.max_row, 1)
         self.assertGreater(inst_sheet.max_column, 0)  # Instructions should have content
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.documentation
     def test_create_reference_worksheet(self):
         """Test _create_reference_worksheet method"""
         workbook = Workbook()
@@ -140,6 +161,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         self.assertGreater(ref_sheet.max_row, 1)
         self.assertGreater(ref_sheet.max_column, 1)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.controller
     def test_create_controller_sheet(self):
         """Test _create_controller_sheet method"""
         workbook = Workbook()
@@ -152,6 +176,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         # Check that controller data exists
         self.assertGreater(ctrl_sheet.max_row, 1)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.functional
     def test_full_template_workflow(self):
         """Test complete template generation workflow"""
         result = self.generator.create_template(self.template_path)
@@ -176,6 +203,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         # Check that sample data exists
         self.assertGreater(smoke_sheet.max_row, 1)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.configuration
     def test_template_with_custom_filename(self):
         """Test template creation with custom filename"""
         custom_path = os.path.join(self.temp_dir, 'custom_template.xlsx')
@@ -187,6 +217,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         # Clean up
         os.remove(custom_path)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.file_handling
     def test_template_overwrites_existing_file(self):
         """Test that template generation overwrites existing files"""
         # Create a dummy file first
@@ -202,6 +235,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         workbook = load_workbook(self.template_path)
         self.assertIn('SMOKE', workbook.sheetnames)
 
+    @pytest.mark.negative
+    @pytest.mark.template_generation
+    @pytest.mark.error_handling
     def test_error_handling_in_create_template(self):
         """Test error handling in create_template method"""
         # Test with None filename
@@ -212,7 +248,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         result = self.generator.create_template("")
         self.assertFalse(result)
 
-    @patch('src.utils.excel_template_generator.Workbook')
+    @pytest.mark.negative
+    @pytest.mark.template_generation
+    @pytest.mark.error_handling
     def test_workbook_creation_error(self, mock_workbook):
         """Test error handling when workbook creation fails"""
         mock_workbook.side_effect = Exception("Workbook creation failed")
@@ -220,6 +258,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         result = self.generator.create_template(self.template_path)
         self.assertFalse(result)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.structure
     def test_sheet_ordering(self):
         """Test that sheets are created in the correct order"""
         result = self.generator.create_template(self.template_path)
@@ -234,6 +275,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         self.assertIn('REFERENCE', sheet_names)
         self.assertIn('INSTRUCTIONS', sheet_names)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.formatting
     def test_column_formatting(self):
         """Test that columns are properly formatted in the template"""
         result = self.generator.create_template(self.template_path)
@@ -250,6 +294,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         # (This is a basic check since openpyxl formatting is complex)
         self.assertTrue(True)  # If template loads without error, formatting worked
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.validation
     def test_data_validation_setup(self):
         """Test that data validation is properly set up"""
         result = self.generator.create_template(self.template_path)
@@ -262,6 +309,9 @@ class TestExcelTemplateGenerator(unittest.TestCase):
         # (Detailed validation testing would require more complex openpyxl inspection)
         self.assertIsNotNone(smoke_sheet)
 
+    @pytest.mark.positive
+    @pytest.mark.template_generation
+    @pytest.mark.documentation
     def test_reference_sheet_content(self):
         """Test that reference sheet has proper content"""
         result = self.generator.create_template(self.template_path)

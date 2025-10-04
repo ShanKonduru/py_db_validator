@@ -3,6 +3,7 @@
 Simple unit tests for parameter functionality
 """
 import unittest
+import pytest
 from src.utils.excel_test_suite_reader import TestCase
 
 
