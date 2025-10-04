@@ -7,7 +7,7 @@ import tempfile
 import os
 from unittest.mock import patch, Mock
 from openpyxl import Workbook
-from src.validation.excel_validator import ExcelTestSuiteValidator
+from src.validation.excel_validator import ExcelTestSuiteValidator, ValidationMessage, ValidationSeverity
 
 
 class TestExcelValidator(unittest.TestCase):
@@ -38,11 +38,11 @@ class TestExcelValidator(unittest.TestCase):
         worksheet = workbook.active
         worksheet.title = 'SMOKE'
         
-        # Valid headers
+        # Valid headers (matching REQUIRED_HEADERS)
         headers = [
-            'Enable', 'Test Case ID', 'Test Case Name', 'Application Name',
-            'Environment Name', 'Priority', 'Test Category', 'Expected Result',
-            'Timeout (seconds)', 'Description', 'Prerequisites', 'Tags', 'Parameters'
+            'Enable', 'Test_Case_ID', 'Test_Case_Name', 'Application_Name',
+            'Environment_Name', 'Priority', 'Test_Category', 'Expected_Result',
+            'Timeout_Seconds', 'Description', 'Prerequisites', 'Tags', 'Parameters'
         ]
         
         for idx, header in enumerate(headers, 1):
@@ -50,14 +50,14 @@ class TestExcelValidator(unittest.TestCase):
         
         # Valid test data
         test_data = [
-            ['TRUE', 'SMOKE_001', 'Valid Connection Test', 'TestApp', 'DEV', 'HIGH',
-             'CONNECTION_TEST', 'PASS', '30', 'Valid test description', 'Database available',
+            ['TRUE', 'SMOKE_001', 'Valid Connection Test', 'POSTGRES', 'DEV', 'HIGH',
+             'CONNECTION', 'PASS', '30', 'Valid test description', 'Database available',
              'smoke,connection', ''],
-            ['TRUE', 'SMOKE_002', 'Valid Table Test', 'TestApp', 'DEV', 'MEDIUM',
+            ['TRUE', 'SMOKE_002', 'Valid Table Test', 'POSTGRES', 'DEV', 'MEDIUM',
              'TABLE_EXISTS', 'PASS', '30', 'Valid table test', 'Database available',
              'smoke,table', 'table_name=public.products'],
-            ['FALSE', 'SMOKE_003', 'Disabled Test', 'TestApp', 'DEV', 'LOW',
-             'SMOKE_TEST', 'PASS', '30', 'Disabled test', 'None',
+            ['FALSE', 'SMOKE_003', 'Disabled Test', 'POSTGRES', 'DEV', 'LOW',
+             'SETUP', 'PASS', '30', 'Disabled test', 'None',
              'smoke,disabled', '']
         ]
         
@@ -75,8 +75,8 @@ class TestExcelValidator(unittest.TestCase):
         
         # Missing some required headers
         headers = [
-            'Enable', 'Test Case ID', 'Invalid Name', 'Application Name',
-            'Environment Name', 'Priority'
+            'Enable', 'Test_Case_ID', 'Invalid_Name', 'Application_Name',
+            'Environment_Name', 'Priority'
             # Missing several required headers
         ]
         
@@ -85,8 +85,8 @@ class TestExcelValidator(unittest.TestCase):
         
         # Invalid test data
         test_data = [
-            ['INVALID', 'INVALID_ID', '', 'TestApp', 'DEV', 'INVALID_PRIORITY'],
-            ['TRUE', '', 'Test without ID', 'TestApp', 'DEV', 'HIGH']
+            ['INVALID', 'INVALID_ID', '', 'INVALID_APP', 'INVALID_ENV', 'INVALID_PRIORITY'],
+            ['TRUE', '', 'Test without ID', 'POSTGRES', 'DEV', 'HIGH']
         ]
         
         for row_idx, row_data in enumerate(test_data, 2):
@@ -99,317 +99,251 @@ class TestExcelValidator(unittest.TestCase):
         """Test ExcelTestSuiteValidator initialization"""
         validator = ExcelTestSuiteValidator()
         self.assertIsNotNone(validator)
+        self.assertEqual(len(validator.validation_messages), 0)
 
-    def test_validate_file_path(self):
-        """Test file path validation"""
+    def test_validate_test_suite_valid_file(self):
+        """Test validate_test_suite with valid file"""
         validator = ExcelTestSuiteValidator()
         
-        # Valid file
-        result = validator.validate_file_path(self.valid_file)
-        self.assertTrue(result)
+        from openpyxl import load_workbook
+        workbook = load_workbook(self.valid_file)
         
-        # Non-existent file
-        result = validator.validate_file_path('nonexistent.xlsx')
-        self.assertFalse(result)
+        is_valid, messages = validator.validate_test_suite(workbook, 'SMOKE')
         
-        # None file
-        result = validator.validate_file_path(None)
-        self.assertFalse(result)
+        # Check that validation passes (or has minimal warnings)
+        error_messages = [msg for msg in messages if msg.severity == ValidationSeverity.ERROR]
+        self.assertEqual(len(error_messages), 0, f"Unexpected errors: {[msg.message for msg in error_messages]}")
 
-    def test_validate_excel_structure(self):
-        """Test Excel structure validation"""
+    def test_validate_test_suite_invalid_file(self):
+        """Test validate_test_suite with invalid file"""
         validator = ExcelTestSuiteValidator()
         
-        # Valid file
-        result = validator.validate_excel_structure(self.valid_file)
-        self.assertTrue(result)
+        from openpyxl import load_workbook
+        workbook = load_workbook(self.invalid_file)
         
-        # Invalid file
-        result = validator.validate_excel_structure(self.invalid_file)
-        self.assertFalse(result)
+        is_valid, messages = validator.validate_test_suite(workbook, 'SMOKE')
+        
+        # Should have validation errors
+        error_messages = [msg for msg in messages if msg.severity == ValidationSeverity.ERROR]
+        self.assertGreater(len(error_messages), 0)
+        self.assertFalse(is_valid)
 
-    def test_validate_smoke_sheet_exists(self):
-        """Test SMOKE sheet existence validation"""
+    def test_validate_test_suite_missing_sheet(self):
+        """Test validate_test_suite with missing sheet"""
         validator = ExcelTestSuiteValidator()
         
-        # Valid file with SMOKE sheet
-        result = validator.validate_smoke_sheet_exists(self.valid_file)
-        self.assertTrue(result)
+        from openpyxl import load_workbook
+        workbook = load_workbook(self.valid_file)
         
-        # Create file without SMOKE sheet
+        is_valid, messages = validator.validate_test_suite(workbook, 'NONEXISTENT')
+        
+        # Should fail due to missing sheet
+        self.assertFalse(is_valid)
+        self.assertGreater(len(messages), 0)
+        self.assertIn('not found', messages[0].message)
+
+    def test_validation_message_structure(self):
+        """Test ValidationMessage structure"""
+        message = ValidationMessage(
+            severity=ValidationSeverity.ERROR,
+            row=1,
+            column='A',
+            field='test_field',
+            message='Test message',
+            current_value='current',
+            suggested_value='suggested'
+        )
+        
+        self.assertEqual(message.severity, ValidationSeverity.ERROR)
+        self.assertEqual(message.row, 1)
+        self.assertEqual(message.column, 'A')
+        self.assertEqual(message.field, 'test_field')
+        self.assertEqual(message.message, 'Test message')
+        self.assertEqual(message.current_value, 'current')
+        self.assertEqual(message.suggested_value, 'suggested')
+
+    def test_validation_severity_enum(self):
+        """Test ValidationSeverity enum values"""
+        self.assertEqual(ValidationSeverity.ERROR.value, "ERROR")
+        self.assertEqual(ValidationSeverity.WARNING.value, "WARNING")
+        self.assertEqual(ValidationSeverity.INFO.value, "INFO")
+
+    def test_validator_constants(self):
+        """Test validator constants are properly defined"""
+        validator = ExcelTestSuiteValidator()
+        
+        # Test constants exist
+        self.assertIsInstance(validator.VALID_PRIORITIES, set)
+        self.assertIsInstance(validator.VALID_ENVIRONMENTS, set)
+        self.assertIsInstance(validator.VALID_APPLICATIONS, set)
+        self.assertIsInstance(validator.VALID_EXPECTED_RESULTS, set)
+        self.assertIsInstance(validator.VALID_TEST_CATEGORIES, dict)
+        self.assertIsInstance(validator.REQUIRED_HEADERS, list)
+        
+        # Test specific values
+        self.assertIn('HIGH', validator.VALID_PRIORITIES)
+        self.assertIn('MEDIUM', validator.VALID_PRIORITIES)
+        self.assertIn('LOW', validator.VALID_PRIORITIES)
+        
+        self.assertIn('DEV', validator.VALID_ENVIRONMENTS)
+        self.assertIn('PROD', validator.VALID_ENVIRONMENTS)
+        
+        self.assertIn('PASS', validator.VALID_EXPECTED_RESULTS)
+        self.assertIn('FAIL', validator.VALID_EXPECTED_RESULTS)
+
+    def test_required_headers_structure(self):
+        """Test required headers structure"""
+        validator = ExcelTestSuiteValidator()
+        
+        expected_headers = [
+            "Enable", "Test_Case_ID", "Test_Case_Name", "Application_Name",
+            "Environment_Name", "Priority", "Test_Category", "Expected_Result", 
+            "Timeout_Seconds", "Description", "Prerequisites", "Tags", "Parameters"
+        ]
+        
+        self.assertEqual(validator.REQUIRED_HEADERS, expected_headers)
+
+    def test_timeout_constraints(self):
+        """Test timeout constraints"""
+        validator = ExcelTestSuiteValidator()
+        
+        self.assertEqual(validator.MIN_TIMEOUT_SECONDS, 5)
+        self.assertEqual(validator.MAX_TIMEOUT_SECONDS, 3600)
+
+    def test_length_constraints(self):
+        """Test length constraints"""
+        validator = ExcelTestSuiteValidator()
+        
+        self.assertEqual(validator.MAX_DESCRIPTION_LENGTH, 500)
+        self.assertEqual(validator.MAX_PREREQUISITES_LENGTH, 1000)
+
+    def test_valid_test_categories(self):
+        """Test valid test categories mapping"""
+        validator = ExcelTestSuiteValidator()
+        
+        # Test that test categories map to method names
+        self.assertIn('SETUP', validator.VALID_TEST_CATEGORIES)
+        self.assertIn('CONNECTION', validator.VALID_TEST_CATEGORIES)
+        self.assertIn('TABLE_EXISTS', validator.VALID_TEST_CATEGORIES)
+        self.assertIn('TABLE_SELECT', validator.VALID_TEST_CATEGORIES)
+        
+        # Test that values are method names
+        self.assertEqual(validator.VALID_TEST_CATEGORIES['SETUP'], 'test_environment_setup')
+        self.assertEqual(validator.VALID_TEST_CATEGORIES['CONNECTION'], 'test_postgresql_connection')
+
+    def test_empty_workbook_handling(self):
+        """Test handling of empty workbook"""
+        validator = ExcelTestSuiteValidator()
+        
+        # Create empty workbook
         workbook = Workbook()
-        worksheet = workbook.active
-        worksheet.title = 'OTHER'
+        workbook.remove(workbook.active)  # Remove default sheet
         
-        no_smoke_file = os.path.join(self.temp_dir, 'no_smoke.xlsx')
-        workbook.save(no_smoke_file)
+        is_valid, messages = validator.validate_test_suite(workbook, 'SMOKE')
         
-        result = validator.validate_smoke_sheet_exists(no_smoke_file)
-        self.assertFalse(result)
-        
-        # Clean up
-        os.remove(no_smoke_file)
+        self.assertFalse(is_valid)
+        self.assertGreater(len(messages), 0)
 
-    def test_validate_headers(self):
-        """Test header validation"""
+    def test_multiple_validation_runs(self):
+        """Test that validator can be reused for multiple validations"""
         validator = ExcelTestSuiteValidator()
         
-        # Valid headers
-        valid_headers = [
-            'Enable', 'Test Case ID', 'Test Case Name', 'Application Name',
-            'Environment Name', 'Priority', 'Test Category', 'Expected Result',
-            'Timeout (seconds)', 'Description', 'Prerequisites', 'Tags', 'Parameters'
-        ]
+        from openpyxl import load_workbook
+        workbook = load_workbook(self.valid_file)
         
-        result = validator.validate_headers(valid_headers)
-        self.assertTrue(result)
+        # First validation
+        is_valid1, messages1 = validator.validate_test_suite(workbook, 'SMOKE')
         
-        # Invalid headers (missing required)
-        invalid_headers = ['Enable', 'Test Case ID', 'Wrong Header']
-        result = validator.validate_headers(invalid_headers)
-        self.assertFalse(result)
+        # Second validation - should reset messages
+        is_valid2, messages2 = validator.validate_test_suite(workbook, 'SMOKE')
         
-        # Empty headers
-        result = validator.validate_headers([])
-        self.assertFalse(result)
+        # Both should have same results
+        self.assertEqual(is_valid1, is_valid2)
+        self.assertEqual(len(messages1), len(messages2))
 
-    def test_validate_test_data(self):
-        """Test test data validation"""
+    def test_validation_messages_collection(self):
+        """Test that validation messages are properly collected"""
         validator = ExcelTestSuiteValidator()
         
-        # Valid test row
-        valid_row = [
-            'TRUE', 'TEST_001', 'Valid Test', 'App', 'DEV', 'HIGH',
-            'CONNECTION_TEST', 'PASS', '30', 'Description', 'Prerequisites',
-            'tags', 'parameters'
-        ]
+        from openpyxl import load_workbook
+        workbook = load_workbook(self.invalid_file)
         
-        result = validator.validate_test_data_row(valid_row, 2)
-        self.assertTrue(result)
+        is_valid, messages = validator.validate_test_suite(workbook, 'SMOKE')
         
-        # Invalid test row (missing required fields)
-        invalid_row = ['TRUE', '', 'Test Name', 'App', 'DEV', 'INVALID_PRIORITY']
-        result = validator.validate_test_data_row(invalid_row, 2)
-        self.assertFalse(result)
+        # Should have messages
+        self.assertGreater(len(messages), 0)
+        
+        # All messages should be ValidationMessage instances
+        for message in messages:
+            self.assertIsInstance(message, ValidationMessage)
+            self.assertIsInstance(message.severity, ValidationSeverity)
 
-    def test_validate_enable_values(self):
-        """Test Enable column validation"""
+    def test_boolean_values_validation(self):
+        """Test boolean values validation"""
         validator = ExcelTestSuiteValidator()
         
-        # Valid values
-        self.assertTrue(validator.is_valid_enable_value('TRUE'))
-        self.assertTrue(validator.is_valid_enable_value('FALSE'))
+        # Test valid boolean representations
+        valid_boolean_values = validator.VALID_BOOLEAN_VALUES
         
-        # Invalid values
-        self.assertFalse(validator.is_valid_enable_value('INVALID'))
-        self.assertFalse(validator.is_valid_enable_value(''))
-        self.assertFalse(validator.is_valid_enable_value(None))
-
-    def test_validate_priority_values(self):
-        """Test Priority column validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid values
-        self.assertTrue(validator.is_valid_priority('HIGH'))
-        self.assertTrue(validator.is_valid_priority('MEDIUM'))
-        self.assertTrue(validator.is_valid_priority('LOW'))
-        
-        # Invalid values
-        self.assertFalse(validator.is_valid_priority('INVALID'))
-        self.assertFalse(validator.is_valid_priority(''))
-        self.assertFalse(validator.is_valid_priority(None))
-
-    def test_validate_test_category_values(self):
-        """Test Test Category column validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid values
-        self.assertTrue(validator.is_valid_test_category('CONNECTION_TEST'))
-        self.assertTrue(validator.is_valid_test_category('SMOKE_TEST'))
-        self.assertTrue(validator.is_valid_test_category('TABLE_EXISTS'))
-        self.assertTrue(validator.is_valid_test_category('TABLE_SELECT'))
-        self.assertTrue(validator.is_valid_test_category('TABLE_ROWS'))
-        self.assertTrue(validator.is_valid_test_category('TABLE_STRUCTURE'))
-        
-        # Invalid values
-        self.assertFalse(validator.is_valid_test_category('INVALID_CATEGORY'))
-        self.assertFalse(validator.is_valid_test_category(''))
-        self.assertFalse(validator.is_valid_test_category(None))
-
-    def test_validate_expected_result_values(self):
-        """Test Expected Result column validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid values
-        self.assertTrue(validator.is_valid_expected_result('PASS'))
-        self.assertTrue(validator.is_valid_expected_result('FAIL'))
-        
-        # Invalid values
-        self.assertFalse(validator.is_valid_expected_result('INVALID'))
-        self.assertFalse(validator.is_valid_expected_result(''))
-        self.assertFalse(validator.is_valid_expected_result(None))
-
-    def test_validate_timeout_values(self):
-        """Test Timeout column validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid values
-        self.assertTrue(validator.is_valid_timeout('30'))
-        self.assertTrue(validator.is_valid_timeout('60'))
-        self.assertTrue(validator.is_valid_timeout(30))
-        
-        # Invalid values
-        self.assertFalse(validator.is_valid_timeout('invalid'))
-        self.assertFalse(validator.is_valid_timeout('-10'))
-        self.assertFalse(validator.is_valid_timeout(''))
-        self.assertFalse(validator.is_valid_timeout(None))
-
-    def test_validate_required_fields(self):
-        """Test required field validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid required field
-        self.assertTrue(validator.is_required_field_valid('Required Value'))
-        
-        # Invalid required fields
-        self.assertFalse(validator.is_required_field_valid(''))
-        self.assertFalse(validator.is_required_field_valid(None))
-        self.assertFalse(validator.is_required_field_valid('   '))  # Only whitespace
-
-    def test_get_validation_errors(self):
-        """Test getting validation errors"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Validate invalid file and check errors
-        result = validator.validate_excel_structure(self.invalid_file)
-        self.assertFalse(result)
-        
-        errors = validator.get_validation_errors()
-        self.assertIsInstance(errors, list)
-        self.assertGreater(len(errors), 0)
-
-    def test_clear_validation_errors(self):
-        """Test clearing validation errors"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Generate some errors
-        validator.validate_excel_structure(self.invalid_file)
-        errors = validator.get_validation_errors()
-        self.assertGreater(len(errors), 0)
-        
-        # Clear errors
-        validator.clear_validation_errors()
-        errors = validator.get_validation_errors()
-        self.assertEqual(len(errors), 0)
-
-    def test_validate_complete_file(self):
-        """Test complete file validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid file
-        result = validator.validate_complete_file(self.valid_file)
-        self.assertTrue(result)
-        
-        # Invalid file
-        result = validator.validate_complete_file(self.invalid_file)
-        self.assertFalse(result)
-
-    def test_get_validation_summary(self):
-        """Test getting validation summary"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Validate a file
-        validator.validate_complete_file(self.invalid_file)
-        summary = validator.get_validation_summary()
-        
-        self.assertIsInstance(summary, str)
-        self.assertIn('validation', summary.lower())
-
-    def test_validate_parameters_column(self):
-        """Test Parameters column validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid parameter formats
-        valid_params = [
-            '',  # Empty is valid
-            'table_name=public.products',  # Single parameter
-            'table_name=public.employees,min_rows=5',  # Multiple parameters
-            'simple_table_name'  # Simple value
-        ]
-        
-        for param in valid_params:
-            result = validator.is_valid_parameters(param)
-            self.assertTrue(result, f"Failed for parameter: {param}")
+        self.assertIn(True, valid_boolean_values)
+        self.assertIn(False, valid_boolean_values)
+        self.assertIn("TRUE", valid_boolean_values)
+        self.assertIn("FALSE", valid_boolean_values)
+        self.assertIn(1, valid_boolean_values)
+        self.assertIn(0, valid_boolean_values)
 
     def test_edge_cases(self):
         """Test edge cases and error conditions"""
         validator = ExcelTestSuiteValidator()
         
-        # Empty file path
-        result = validator.validate_file_path('')
-        self.assertFalse(result)
-        
-        # None as input
-        result = validator.validate_headers(None)
-        self.assertFalse(result)
-        
-        # Very long test case ID
-        long_id = 'A' * 1000
-        result = validator.is_required_field_valid(long_id)
-        self.assertTrue(result)  # Should still be valid
+        # Test with None workbook should raise an error
+        with self.assertRaises(AttributeError):
+            validator.validate_test_suite(None, 'SMOKE')
 
-    def test_case_sensitivity(self):
-        """Test case sensitivity in validation"""
+    def test_large_dataset_validation(self):
+        """Test validation with larger dataset"""
+        # Create file with many test cases
+        large_file = os.path.join(self.temp_dir, 'large.xlsx')
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.title = 'SMOKE'
+        
+        # Headers
+        headers = [
+            'Enable', 'Test_Case_ID', 'Test_Case_Name', 'Application_Name',
+            'Environment_Name', 'Priority', 'Test_Category', 'Expected_Result',
+            'Timeout_Seconds', 'Description', 'Prerequisites', 'Tags', 'Parameters'
+        ]
+        
+        for idx, header in enumerate(headers, 1):
+            worksheet.cell(row=1, column=idx, value=header)
+        
+        # Add 50 test cases
+        for i in range(50):
+            row_data = [
+                'TRUE', f'TEST_{i:03d}', f'Test Case {i}', 'POSTGRES', 'DEV', 'MEDIUM',
+                'SETUP', 'PASS', '30', f'Description {i}', 'Prerequisites',
+                'smoke,auto', f'test_id={i}'
+            ]
+            
+            for col_idx, cell_value in enumerate(row_data, 1):
+                worksheet.cell(row=i+2, column=col_idx, value=cell_value)
+        
+        workbook.save(large_file)
+        
         validator = ExcelTestSuiteValidator()
+        workbook = Workbook()
+        from openpyxl import load_workbook
+        workbook = load_workbook(large_file)
         
-        # Test case sensitivity for enable values
-        self.assertTrue(validator.is_valid_enable_value('TRUE'))
-        self.assertFalse(validator.is_valid_enable_value('true'))  # Should be case-sensitive
+        is_valid, messages = validator.validate_test_suite(workbook, 'SMOKE')
         
-        # Test case sensitivity for priority
-        self.assertTrue(validator.is_valid_priority('HIGH'))
-        self.assertFalse(validator.is_valid_priority('high'))
-
-    def test_whitespace_handling(self):
-        """Test whitespace handling in validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Test whitespace trimming in required fields
-        self.assertTrue(validator.is_required_field_valid('  Valid Value  '))
-        self.assertFalse(validator.is_required_field_valid('   '))  # Only whitespace
-
-    def test_numeric_validation(self):
-        """Test numeric validation for timeout"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Valid numeric values
-        self.assertTrue(validator.is_valid_timeout(30))
-        self.assertTrue(validator.is_valid_timeout('30'))
-        self.assertTrue(validator.is_valid_timeout('0'))
-        
-        # Invalid numeric values
-        self.assertFalse(validator.is_valid_timeout(-1))
-        self.assertFalse(validator.is_valid_timeout('-1'))
-        self.assertFalse(validator.is_valid_timeout('abc'))
-
-    def test_file_format_validation(self):
-        """Test file format validation"""
-        validator = ExcelTestSuiteValidator()
-        
-        # Create a non-Excel file
-        text_file = os.path.join(self.temp_dir, 'not_excel.txt')
-        with open(text_file, 'w') as f:
-            f.write('This is not an Excel file')
-        
-        result = validator.validate_file_path(text_file)
-        # Should still return True for file existence, but Excel validation should fail
-        self.assertTrue(result)  # File exists
-        
-        result = validator.validate_excel_structure(text_file)
-        self.assertFalse(result)  # Not a valid Excel file
+        # Should handle large dataset
+        self.assertIsInstance(is_valid, bool)
+        self.assertIsInstance(messages, list)
         
         # Clean up
-        os.remove(text_file)
+        os.remove(large_file)
 
 
 if __name__ == '__main__':

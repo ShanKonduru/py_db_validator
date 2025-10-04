@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 """
-Comprehensive unit tests for multi-sheet controller
+Comprehensive unit tests for Multi Sheet Controller
 """
 import unittest
 import tempfile
 import os
 from unittest.mock import patch, Mock, MagicMock
 from openpyxl import Workbook
-from src.core.multi_sheet_controller import MultiSheetTestController
-from src.utils.excel_test_suite_reader import TestCase
+from src.core.multi_sheet_controller import MultiSheetTestController, SheetController
 
 
 class TestMultiSheetController(unittest.TestCase):
-    """Test cases for multi-sheet controller"""
+    """Test cases for Multi Sheet Controller"""
     
     def setUp(self):
         """Set up test fixtures"""
@@ -24,314 +23,404 @@ class TestMultiSheetController(unittest.TestCase):
         """Clean up test fixtures"""
         if os.path.exists(self.test_file):
             os.remove(self.test_file)
-        os.rmdir(self.temp_dir)
+        if os.path.exists(self.temp_dir):
+            os.rmdir(self.temp_dir)
         
     def create_test_excel_file(self):
-        """Create a test Excel file with multiple sheets"""
+        """Create a test Excel file with multiple sheets and CONTROLLER sheet"""
         workbook = Workbook()
         
-        # Create SMOKE sheet
-        smoke_sheet = workbook.active
-        smoke_sheet.title = 'SMOKE'
+        # Create CONTROLLER sheet
+        controller_sheet = workbook.active
+        controller_sheet.title = 'CONTROLLER'
         
-        headers = [
-            'Enable', 'Test Case ID', 'Test Case Name', 'Application Name',
-            'Environment Name', 'Priority', 'Test Category', 'Expected Result',
-            'Timeout (seconds)', 'Description', 'Prerequisites', 'Tags', 'Parameters'
+        # Controller headers
+        controller_headers = ['Enable', 'Sheet_Name', 'Description', 'Priority']
+        for idx, header in enumerate(controller_headers, 1):
+            controller_sheet.cell(row=1, column=idx, value=header)
+        
+        # Controller data
+        controller_data = [
+            ['TRUE', 'SMOKE', 'Smoke tests for database connectivity', 'HIGH'],
+            ['TRUE', 'INTEGRATION', 'Integration tests for data flow', 'MEDIUM'],
+            ['FALSE', 'PERFORMANCE', 'Performance tests for load testing', 'LOW']
         ]
         
-        for idx, header in enumerate(headers, 1):
+        for row_idx, row_data in enumerate(controller_data, 2):
+            for col_idx, cell_value in enumerate(row_data, 1):
+                controller_sheet.cell(row=row_idx, column=col_idx, value=cell_value)
+        
+        # Create SMOKE sheet
+        smoke_sheet = workbook.create_sheet('SMOKE')
+        smoke_headers = [
+            'Enable', 'Test_Case_ID', 'Test_Case_Name', 'Application_Name',
+            'Environment_Name', 'Priority', 'Test_Category', 'Expected_Result',
+            'Timeout_Seconds', 'Description', 'Prerequisites', 'Tags', 'Parameters'
+        ]
+        
+        for idx, header in enumerate(smoke_headers, 1):
             smoke_sheet.cell(row=1, column=idx, value=header)
         
-        # Add smoke test data
         smoke_data = [
-            ['TRUE', 'SMOKE_001', 'Connection Test', 'App1', 'DEV', 'HIGH',
-             'CONNECTION_TEST', 'PASS', '30', 'Test connection', 'DB available',
-             'smoke,connection', ''],
-            ['TRUE', 'SMOKE_002', 'Table Test', 'App1', 'DEV', 'MEDIUM',
-             'TABLE_EXISTS', 'PASS', '30', 'Test table', 'DB available',
-             'smoke,table', 'table_name=public.products']
+            ['TRUE', 'SMOKE_001', 'Connection Test', 'POSTGRES', 'DEV', 'HIGH',
+             'CONNECTION', 'PASS', '30', 'Test connection', 'DB available', 'smoke,connection', ''],
+            ['TRUE', 'SMOKE_002', 'Table Test', 'POSTGRES', 'DEV', 'MEDIUM',
+             'TABLE_EXISTS', 'PASS', '30', 'Test table', 'DB available', 'smoke,table', 'table_name=test']
         ]
         
         for row_idx, row_data in enumerate(smoke_data, 2):
             for col_idx, cell_value in enumerate(row_data, 1):
                 smoke_sheet.cell(row=row_idx, column=col_idx, value=cell_value)
         
-        # Create FUNCTIONAL sheet
-        functional_sheet = workbook.create_sheet(title='FUNCTIONAL')
+        # Create INTEGRATION sheet
+        integration_sheet = workbook.create_sheet('INTEGRATION')
+        for idx, header in enumerate(smoke_headers, 1):
+            integration_sheet.cell(row=1, column=idx, value=header)
         
-        for idx, header in enumerate(headers, 1):
-            functional_sheet.cell(row=1, column=idx, value=header)
-        
-        # Add functional test data
-        functional_data = [
-            ['TRUE', 'FUNC_001', 'Data Validation Test', 'App1', 'DEV', 'HIGH',
-             'DATA_VALIDATION', 'PASS', '60', 'Test data validation', 'Data available',
-             'functional,validation', 'table_name=public.orders'],
-            ['FALSE', 'FUNC_002', 'Performance Test', 'App1', 'DEV', 'LOW',
-             'PERFORMANCE_TEST', 'PASS', '120', 'Test performance', 'Load data',
-             'functional,performance', 'query_timeout=30']
+        integration_data = [
+            ['TRUE', 'INT_001', 'Data Flow Test', 'POSTGRES', 'DEV', 'HIGH',
+             'QUERIES', 'PASS', '60', 'Test data flow', 'DB available', 'integration,data', '']
         ]
         
-        for row_idx, row_data in enumerate(functional_data, 2):
+        for row_idx, row_data in enumerate(integration_data, 2):
             for col_idx, cell_value in enumerate(row_data, 1):
-                functional_sheet.cell(row=row_idx, column=col_idx, value=cell_value)
+                integration_sheet.cell(row=row_idx, column=col_idx, value=cell_value)
+        
+        # Create PERFORMANCE sheet (will be disabled)
+        performance_sheet = workbook.create_sheet('PERFORMANCE')
+        for idx, header in enumerate(smoke_headers, 1):
+            performance_sheet.cell(row=1, column=idx, value=header)
+        
+        performance_data = [
+            ['TRUE', 'PERF_001', 'Load Test', 'POSTGRES', 'DEV', 'LOW',
+             'PERFORMANCE', 'PASS', '300', 'Test performance', 'DB available', 'performance,load', '']
+        ]
+        
+        for row_idx, row_data in enumerate(performance_data, 2):
+            for col_idx, cell_value in enumerate(row_data, 1):
+                performance_sheet.cell(row=row_idx, column=col_idx, value=cell_value)
         
         workbook.save(self.test_file)
 
-    def test_multi_sheet_controller_initialization(self):
+    def test_controller_initialization(self):
         """Test MultiSheetTestController initialization"""
         controller = MultiSheetTestController(self.test_file)
         self.assertIsNotNone(controller)
+        self.assertEqual(str(controller.excel_file), self.test_file)
+        self.assertIsNone(controller.workbook)  # Not loaded yet
+        self.assertEqual(len(controller.sheet_controllers), 0)  # Not loaded yet
 
-    def test_read_all_sheets(self):
-        """Test reading all sheets"""
+    def test_load_workbook_success(self):
+        """Test successful workbook loading"""
         controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
+        result = controller.load_workbook()
         
-        self.assertIsInstance(all_sheets, dict)
-        self.assertIn('SMOKE', all_sheets)
-        self.assertIn('FUNCTIONAL', all_sheets)
+        self.assertTrue(result)
+        self.assertIsNotNone(controller.workbook)
+        self.assertIn('CONTROLLER', controller.workbook.sheetnames)
+        self.assertIn('SMOKE', controller.workbook.sheetnames)
 
-    def test_read_specific_sheet(self):
-        """Test reading a specific sheet"""
-        controller = MultiSheetTestController(self.test_file)
-        smoke_tests = controller.read_sheet('SMOKE')
-        
-        self.assertIsInstance(smoke_tests, list)
-        self.assertEqual(len(smoke_tests), 2)
-        self.assertEqual(smoke_tests[0].test_case_id, 'SMOKE_001')
-
-    def test_read_nonexistent_sheet(self):
-        """Test reading a non-existent sheet"""
-        controller = MultiSheetTestController(self.test_file)
-        result = controller.read_sheet('NONEXISTENT')
-        
-        self.assertEqual(result, [])
-
-    def test_get_sheet_names(self):
-        """Test getting sheet names"""
-        controller = MultiSheetTestController(self.test_file)
-        sheet_names = controller.get_sheet_names()
-        
-        self.assertIn('SMOKE', sheet_names)
-        self.assertIn('FUNCTIONAL', sheet_names)
-
-    def test_filter_by_category(self):
-        """Test filtering by test category"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        connection_tests = controller.filter_by_category(all_sheets, 'CONNECTION_TEST')
-        self.assertEqual(len(connection_tests), 1)
-        self.assertEqual(connection_tests[0].test_case_id, 'SMOKE_001')
-
-    def test_filter_by_priority(self):
-        """Test filtering by priority"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        high_priority = controller.filter_by_priority(all_sheets, 'HIGH')
-        self.assertEqual(len(high_priority), 2)
-
-    def test_filter_by_environment(self):
-        """Test filtering by environment"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        dev_tests = controller.filter_by_environment(all_sheets, 'DEV')
-        self.assertEqual(len(dev_tests), 4)  # All test cases in our sample
-
-    def test_filter_by_tag(self):
-        """Test filtering by tag"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        smoke_tagged = controller.filter_by_tag(all_sheets, 'smoke')
-        self.assertEqual(len(smoke_tagged), 2)
-
-    def test_filter_enabled_only(self):
-        """Test filtering enabled tests only"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        enabled_tests = controller.filter_enabled_only(all_sheets)
-        self.assertEqual(len(enabled_tests), 3)  # FUNC_002 is disabled
-
-    def test_get_test_statistics(self):
-        """Test getting test statistics"""
-        controller = MultiSheetTestController(self.test_file)
-        stats = controller.get_test_statistics()
-        
-        self.assertIn('total_tests', stats)
-        self.assertIn('enabled_tests', stats)
-        self.assertIn('disabled_tests', stats)
-        self.assertIn('sheets', stats)
-        
-        self.assertEqual(stats['total_tests'], 4)
-        self.assertEqual(stats['enabled_tests'], 3)
-        self.assertEqual(stats['disabled_tests'], 1)
-
-    def test_find_test_by_id(self):
-        """Test finding a test by ID across all sheets"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        test_case = controller.find_test_by_id(all_sheets, 'FUNC_001')
-        self.assertIsNotNone(test_case)
-        self.assertEqual(test_case.test_case_id, 'FUNC_001')
-        
-        # Test non-existent ID
-        missing_case = controller.find_test_by_id(all_sheets, 'MISSING_001')
-        self.assertIsNone(missing_case)
-
-    def test_group_by_application(self):
-        """Test grouping tests by application"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        grouped = controller.group_by_application(all_sheets)
-        self.assertIn('App1', grouped)
-        self.assertEqual(len(grouped['App1']), 4)
-
-    def test_group_by_environment(self):
-        """Test grouping tests by environment"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        grouped = controller.group_by_environment(all_sheets)
-        self.assertIn('DEV', grouped)
-        self.assertEqual(len(grouped['DEV']), 4)
-
-    def test_invalid_file_handling(self):
-        """Test handling of invalid file"""
+    def test_load_workbook_invalid_file(self):
+        """Test workbook loading with invalid file"""
         invalid_file = os.path.join(self.temp_dir, 'nonexistent.xlsx')
-        
         controller = MultiSheetTestController(invalid_file)
-        result = controller.read_all_sheets()
+        result = controller.load_workbook()
         
-        # Should return empty dict for invalid file
-        self.assertEqual(result, {})
+        self.assertFalse(result)
 
-    def test_empty_sheet_handling(self):
-        """Test handling of empty sheets"""
-        # Create a file with an empty sheet
+    def test_validate_controller_sheet_success(self):
+        """Test successful CONTROLLER sheet validation"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        
+        result = controller.validate_controller_sheet()
+        self.assertTrue(result)
+
+    def test_validate_controller_sheet_missing(self):
+        """Test CONTROLLER sheet validation when sheet is missing"""
+        # Create file without CONTROLLER sheet
+        no_controller_file = os.path.join(self.temp_dir, 'no_controller.xlsx')
         workbook = Workbook()
-        empty_sheet = workbook.active
-        empty_sheet.title = 'EMPTY'
+        workbook.save(no_controller_file)
         
-        empty_file = os.path.join(self.temp_dir, 'empty.xlsx')
-        workbook.save(empty_file)
+        controller = MultiSheetTestController(no_controller_file)
+        controller.load_workbook()
         
-        controller = MultiSheetTestController(empty_file)
-        result = controller.read_sheet('EMPTY')
-        
-        self.assertEqual(result, [])
+        result = controller.validate_controller_sheet()
+        self.assertFalse(result)
         
         # Clean up
-        os.remove(empty_file)
+        os.remove(no_controller_file)
 
-    def test_sheet_with_invalid_headers(self):
-        """Test handling of sheet with invalid headers"""
-        # Create a file with invalid headers
+    def test_load_controller_data_success(self):
+        """Test successful controller data loading"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        
+        result = controller.load_controller_data()
+        self.assertTrue(result)
+        
+        # Should have 3 sheet controllers
+        self.assertEqual(len(controller.sheet_controllers), 3)
+        
+        # Check specific controllers
+        sheet_names = [sc.sheet_name for sc in controller.sheet_controllers]
+        self.assertIn('SMOKE', sheet_names)
+        self.assertIn('INTEGRATION', sheet_names)
+        self.assertIn('PERFORMANCE', sheet_names)
+
+    def test_get_enabled_sheets(self):
+        """Test getting enabled sheets"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        controller.load_controller_data()
+        
+        enabled_sheets = controller.get_enabled_sheets()
+        
+        # Should have 2 enabled sheets (SMOKE and INTEGRATION)
+        self.assertEqual(len(enabled_sheets), 2)
+        
+        enabled_names = [sheet.sheet_name for sheet in enabled_sheets]
+        self.assertIn('SMOKE', enabled_names)
+        self.assertIn('INTEGRATION', enabled_names)
+        self.assertNotIn('PERFORMANCE', enabled_names)
+
+    def test_get_disabled_sheets(self):
+        """Test getting disabled sheets"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        controller.load_controller_data()
+        
+        disabled_sheets = controller.get_disabled_sheets()
+        
+        # Should have 1 disabled sheet (PERFORMANCE)
+        self.assertEqual(len(disabled_sheets), 1)
+        self.assertEqual(disabled_sheets[0].sheet_name, 'PERFORMANCE')
+
+    def test_convert_bool_method(self):
+        """Test _convert_bool method"""
+        controller = MultiSheetTestController(self.test_file)
+        
+        # Test various boolean representations
+        self.assertTrue(controller._convert_bool(True))
+        self.assertTrue(controller._convert_bool('TRUE'))
+        self.assertTrue(controller._convert_bool('YES'))
+        self.assertTrue(controller._convert_bool('Y'))
+        self.assertTrue(controller._convert_bool('1'))
+        self.assertTrue(controller._convert_bool(1))
+        
+        self.assertFalse(controller._convert_bool(False))
+        self.assertFalse(controller._convert_bool('FALSE'))
+        self.assertFalse(controller._convert_bool('NO'))
+        self.assertFalse(controller._convert_bool('N'))
+        self.assertFalse(controller._convert_bool('0'))
+        self.assertFalse(controller._convert_bool(0))
+        self.assertFalse(controller._convert_bool(''))
+        self.assertFalse(controller._convert_bool(None))
+
+    def test_get_sheet_test_counts(self):
+        """Test _get_sheet_test_counts method"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        
+        # Test SMOKE sheet (has 2 tests, both enabled)
+        total, enabled = controller._get_sheet_test_counts('SMOKE')
+        self.assertEqual(total, 2)
+        self.assertEqual(enabled, 2)
+        
+        # Test INTEGRATION sheet (has 1 test, enabled)
+        total, enabled = controller._get_sheet_test_counts('INTEGRATION')
+        self.assertEqual(total, 1)
+        self.assertEqual(enabled, 1)
+        
+        # Test non-existent sheet
+        total, enabled = controller._get_sheet_test_counts('NONEXISTENT')
+        self.assertEqual(total, 0)
+        self.assertEqual(enabled, 0)
+
+    def test_sheet_controller_dataclass(self):
+        """Test SheetController dataclass"""
+        sheet_controller = SheetController(
+            enable=True,
+            sheet_name='TEST_SHEET',
+            description='Test description',
+            priority='HIGH',
+            test_count=5,
+            enabled_test_count=3
+        )
+        
+        self.assertTrue(sheet_controller.enable)
+        self.assertEqual(sheet_controller.sheet_name, 'TEST_SHEET')
+        self.assertEqual(sheet_controller.description, 'Test description')
+        self.assertEqual(sheet_controller.priority, 'HIGH')
+        self.assertEqual(sheet_controller.test_count, 5)
+        self.assertEqual(sheet_controller.enabled_test_count, 3)
+
+    def test_print_controller_summary(self):
+        """Test print_controller_summary method"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        controller.load_controller_data()
+        
+        # Should not raise an exception
+        try:
+            controller.print_controller_summary()
+        except Exception as e:
+            self.fail(f"print_controller_summary raised an exception: {e}")
+
+    def test_execute_controlled_tests(self):
+        """Test execute_controlled_tests method"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        controller.load_controller_data()
+        
+        # Mock the test execution to avoid actual database connections
+        with patch('src.core.test_executor.TestExecutor') as mock_executor_class:
+            mock_executor = mock_executor_class.return_value
+            mock_executor.execute_test_case.return_value = Mock()
+            
+            # Execute tests
+            results = controller.execute_controlled_tests()
+            
+            # Should return a dictionary of results
+            self.assertIsInstance(results, dict)
+            
+            # Should have results for enabled sheets
+            self.assertIn('SMOKE', results)
+            self.assertIn('INTEGRATION', results)
+            self.assertNotIn('PERFORMANCE', results)  # Disabled
+
+    def test_apply_filters_method(self):
+        """Test _apply_filters method"""
+        controller = MultiSheetTestController(self.test_file)
+        controller.load_workbook()
+        
+        # Create mock test cases
+        from src.utils.excel_test_suite_reader import TestCase
+        test_cases = [
+            TestCase(
+                test_case_id='TEST_001',
+                test_case_name='Test 1',
+                application_name='POSTGRES',
+                environment_name='DEV',
+                priority='HIGH',
+                test_category='CONNECTION',
+                expected_result='PASS',
+                timeout_seconds=30,
+                description='Test 1',
+                prerequisites='None',
+                tags='smoke,high',
+                parameters='',
+                enable=True
+            ),
+            TestCase(
+                test_case_id='TEST_002',
+                test_case_name='Test 2',
+                application_name='POSTGRES',
+                environment_name='DEV',
+                priority='MEDIUM',
+                test_category='TABLE_EXISTS',
+                expected_result='PASS',
+                timeout_seconds=30,
+                description='Test 2',
+                prerequisites='None',
+                tags='smoke,medium',
+                parameters='',
+                enable=True
+            )
+        ]
+        
+        # Test filtering by priority
+        filtered = controller._apply_filters(test_cases, priority='HIGH')
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0].priority, 'HIGH')
+        
+        # Test filtering by category
+        filtered = controller._apply_filters(test_cases, category='CONNECTION')
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0].test_category, 'CONNECTION')
+
+    def test_error_handling_invalid_controller_sheet(self):
+        """Test error handling with invalid CONTROLLER sheet structure"""
+        # Create file with wrong CONTROLLER headers
+        invalid_file = os.path.join(self.temp_dir, 'invalid_controller.xlsx')
         workbook = Workbook()
-        invalid_sheet = workbook.active
-        invalid_sheet.title = 'INVALID'
+        controller_sheet = workbook.active
+        controller_sheet.title = 'CONTROLLER'
         
-        # Add wrong headers
-        invalid_headers = ['Wrong', 'Headers', 'Here']
-        for idx, header in enumerate(invalid_headers, 1):
-            invalid_sheet.cell(row=1, column=idx, value=header)
+        # Wrong headers
+        wrong_headers = ['Wrong', 'Headers', 'Here']
+        for idx, header in enumerate(wrong_headers, 1):
+            controller_sheet.cell(row=1, column=idx, value=header)
         
-        invalid_file = os.path.join(self.temp_dir, 'invalid.xlsx')
         workbook.save(invalid_file)
         
         controller = MultiSheetTestController(invalid_file)
-        result = controller.read_sheet('INVALID')
+        controller.load_workbook()
         
-        # Should handle gracefully and return empty list
-        self.assertEqual(result, [])
+        result = controller.validate_controller_sheet()
+        self.assertFalse(result)
         
         # Clean up
         os.remove(invalid_file)
 
-    def test_complex_filtering_combinations(self):
-        """Test complex filtering combinations"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        # Filter by multiple criteria
-        enabled_tests = controller.filter_enabled_only(all_sheets)
-        high_priority_enabled = controller.filter_by_priority(enabled_tests, 'HIGH')
-        
-        self.assertEqual(len(high_priority_enabled), 2)
-
-    def test_parameter_extraction(self):
-        """Test parameter extraction from test cases"""
-        controller = MultiSheetTestController(self.test_file)
-        all_sheets = controller.read_all_sheets()
-        
-        # Find test with parameters
-        table_test = None
-        for sheet_tests in all_sheets.values():
-            for test in sheet_tests:
-                if test.test_case_id == 'SMOKE_002':
-                    table_test = test
-                    break
-        
-        self.assertIsNotNone(table_test)
-        self.assertEqual(table_test.get_parameter('table_name'), 'public.products')
-
-    def test_error_recovery(self):
-        """Test error recovery in various scenarios"""
-        controller = MultiSheetTestController(self.test_file)
-        
-        # Test with None filename
-        controller_none = MultiSheetTestController(None)
-        result = controller_none.read_all_sheets()
-        self.assertEqual(result, {})
-        
-        # Test with empty filename
-        controller_empty = MultiSheetTestController("")
-        result = controller_empty.read_all_sheets()
-        self.assertEqual(result, {})
-
-    def test_large_dataset_handling(self):
-        """Test handling of larger datasets"""
-        # Create a file with more test data
+    def test_missing_referenced_sheets(self):
+        """Test handling of missing referenced sheets"""
+        # Create file where CONTROLLER references non-existent sheets
+        missing_sheet_file = os.path.join(self.temp_dir, 'missing_sheets.xlsx')
         workbook = Workbook()
-        large_sheet = workbook.active
-        large_sheet.title = 'LARGE'
+        controller_sheet = workbook.active
+        controller_sheet.title = 'CONTROLLER'
         
-        headers = [
-            'Enable', 'Test Case ID', 'Test Case Name', 'Application Name',
-            'Environment Name', 'Priority', 'Test Category', 'Expected Result',
-            'Timeout (seconds)', 'Description', 'Prerequisites', 'Tags', 'Parameters'
+        # Controller headers
+        controller_headers = ['Enable', 'Sheet_Name', 'Description', 'Priority']
+        for idx, header in enumerate(controller_headers, 1):
+            controller_sheet.cell(row=1, column=idx, value=header)
+        
+        # Reference non-existent sheet
+        controller_data = [
+            ['TRUE', 'NONEXISTENT_SHEET', 'Missing sheet', 'HIGH']
         ]
         
-        for idx, header in enumerate(headers, 1):
-            large_sheet.cell(row=1, column=idx, value=header)
-        
-        # Add 100 test cases
-        for i in range(100):
-            row_data = [
-                'TRUE', f'TEST_{i:03d}', f'Test Case {i}', 'LargeApp', 'TEST',
-                'MEDIUM', 'SMOKE_TEST', 'PASS', '30', f'Description {i}',
-                'Prerequisites', 'large,test', ''
-            ]
+        for row_idx, row_data in enumerate(controller_data, 2):
             for col_idx, cell_value in enumerate(row_data, 1):
-                large_sheet.cell(row=i+2, column=col_idx, value=cell_value)
+                controller_sheet.cell(row=row_idx, column=col_idx, value=cell_value)
         
-        large_file = os.path.join(self.temp_dir, 'large.xlsx')
-        workbook.save(large_file)
+        workbook.save(missing_sheet_file)
         
-        controller = MultiSheetTestController(large_file)
-        result = controller.read_sheet('LARGE')
+        controller = MultiSheetTestController(missing_sheet_file)
+        controller.load_workbook()
         
-        self.assertEqual(len(result), 100)
+        # Should handle gracefully and still load controller data
+        result = controller.load_controller_data()
+        self.assertTrue(result)  # Should succeed but warn about missing sheet
         
         # Clean up
-        os.remove(large_file)
+        os.remove(missing_sheet_file)
+
+    def test_empty_controller_sheet(self):
+        """Test handling of empty CONTROLLER sheet"""
+        empty_file = os.path.join(self.temp_dir, 'empty_controller.xlsx')
+        workbook = Workbook()
+        controller_sheet = workbook.active
+        controller_sheet.title = 'CONTROLLER'
+        
+        # Only headers, no data
+        controller_headers = ['Enable', 'Sheet_Name', 'Description', 'Priority']
+        for idx, header in enumerate(controller_headers, 1):
+            controller_sheet.cell(row=1, column=idx, value=header)
+        
+        workbook.save(empty_file)
+        
+        controller = MultiSheetTestController(empty_file)
+        controller.load_workbook()
+        
+        result = controller.load_controller_data()
+        self.assertTrue(result)
+        self.assertEqual(len(controller.sheet_controllers), 0)
+        
+        # Clean up
+        os.remove(empty_file)
 
 
 if __name__ == '__main__':
