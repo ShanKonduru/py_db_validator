@@ -119,7 +119,7 @@ python coverage_summary.py
 
 ### 3. PostgreSQL Smoke Tests
 
-Quick smoke tests to verify PostgreSQL connectivity and basic functionality:
+Quick smoke tests to verify PostgreSQL connectivity and basic functionality with **any PostgreSQL database**:
 
 ```bash
 # Run smoke test runner (recommended)
@@ -134,14 +134,37 @@ pytest tests/test_postgresql_smoke.py -v # PostgreSQL smoke tests specifically
 python tests/test_postgresql_smoke.py
 ```
 
+**Configuration Methods (Priority Order):**
+
+1. **Environment Variables (Highest Priority):**
+   ```bash
+   export POSTGRES_HOST="localhost"
+   export POSTGRES_PORT="5432"
+   export POSTGRES_DATABASE="mydb"
+   export POSTGRES_USERNAME="user"
+   export POSTGRES_PASSWORD="pass"
+   export POSTGRES_SCHEMA="public"  # Optional
+   
+   # Optional: Override environment/application
+   export TEST_ENVIRONMENT="PROD"   # Default: DEV
+   export TEST_APPLICATION="MYAPP"  # Default: DUMMY
+   ```
+
+2. **Configuration File (Lower Priority):**
+   - Uses `config/database_connections.json`
+   - Supports any environment/application combination
+   - Credentials via environment variable references
+
 **Smoke Test Categories:**
 
 - 🔧 **Environment Setup**: Validates configuration files and environment variables
-- 🗃️ **Configuration**: Checks DUMMY application config in DEV environment
+- 🗃️ **Configuration**: Checks application config in specified environment
 - 🔐 **Credentials**: Verifies database credentials are properly set
 - 🔌 **Connection**: Tests actual PostgreSQL database connectivity
 - 📊 **Basic Queries**: Validates version queries, schema access, and table listing
 - ⚡ **Performance**: Ensures connection establishes within reasonable time
+
+**See [POSTGRESQL_SMOKE_TESTS.md](POSTGRESQL_SMOKE_TESTS.md) for detailed configuration guide.**
 
 ### 4. Usage Example
 
