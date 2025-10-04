@@ -28,7 +28,7 @@ from openpyxl import load_workbook
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.core.test_executor import TestExecutor
-from src.tests.static_postgresql_smoke_tests import StaticPostgreSQLSmokeTests
+from src.tests.static_database_smoke_tests import StaticDatabaseSmokeTests
 
 
 @dataclass
@@ -123,11 +123,16 @@ def execute_smoke_tests(excel_file: str):
     # Check if we should use static tests (default to static for production stability)
     use_static_tests = os.environ.get("USE_STATIC_SMOKE_TESTS", "true").lower() in ["true", "1", "yes"]
     test_method = "🔒 STATIC IMMUTABLE" if use_static_tests else "🏗️  INSTANCE BASED"
+    
+    # Get database type from environment (default to postgresql for backward compatibility)
+    db_type = os.environ.get("DB_TYPE", "postgresql").lower()
+    
     print(f"🧪 Test Method: {test_method}")
+    print(f"🗄️  Database Type: {db_type.upper()}")
     print()
     
-    # Initialize test executor with appropriate method
-    executor = TestExecutor(use_static_tests=use_static_tests)
+    # Initialize test executor with appropriate method and database type
+    executor = TestExecutor(use_static_tests=use_static_tests, db_type=db_type)
     
     # Execute tests
     results = []
@@ -148,51 +153,51 @@ def execute_smoke_tests(excel_file: str):
             if use_static_tests:
                 # Use static immutable tests
                 if test_case.test_category == "SETUP":
-                    result = StaticPostgreSQLSmokeTests.test_environment_setup(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_environment_setup(
+                        db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
                     status = "PASS"
                 elif test_case.test_category == "CONFIGURATION":
-                    result = StaticPostgreSQLSmokeTests.test_configuration_availability(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_configuration_availability(
+                        db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
                     status = "PASS"
                 elif test_case.test_category == "SECURITY":
-                    result = StaticPostgreSQLSmokeTests.test_environment_credentials(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_environment_credentials(
+                        db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
                     status = "PASS"
                 elif test_case.test_category == "CONNECTION":
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_connection(
+                        db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
                     status = "PASS"
                 elif test_case.test_category == "QUERIES":
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_basic_queries(
+                        db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
                     status = "PASS"
                 elif test_case.test_category == "PERFORMANCE":
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection_performance(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_connection_performance(
+                        db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
                     status = "PASS"
                 elif test_case.test_category in ["TABLE_EXISTS", "TABLE_SELECT", "TABLE_ROWS", "TABLE_STRUCTURE"]:
                     # All table-related tests use basic queries for validation
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_basic_queries(
+                        db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])

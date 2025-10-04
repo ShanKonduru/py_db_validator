@@ -1,5 +1,5 @@
 """
-Test execution engine for running PostgreSQL smoke tests
+Test execution engine for running database smoke tests
 """
 import sys
 import time
@@ -14,22 +14,25 @@ from src.models.test_result import TestResult
 from src.utils.excel_test_suite_reader import TestCase
 from src.validators.data_validator import DataValidator
 from tests.test_postgresql_smoke import TestPostgreSQLSmoke
-from src.tests.static_postgresql_smoke_tests import StaticPostgreSQLSmokeTests
+from src.tests.static_database_smoke_tests import StaticDatabaseSmokeTests
 
 
 class TestExecutor:
     """Executes individual test cases and returns results"""
     __test__ = False  # Tell pytest this is not a test class
 
-    def __init__(self, use_static_tests: bool = True):
+    def __init__(self, use_static_tests: bool = True, db_type: str = None):
         """
         Initialize the test executor
         
         Args:
             use_static_tests: If True, use the static immutable smoke test class.
                              If False, use the original instance-based smoke tester.
+            db_type: Database type (postgresql, mysql, oracle, sqlserver). 
+                    If None, will be auto-detected from environment.
         """
         self.use_static_tests = use_static_tests
+        self.db_type = db_type
         self.data_validator = DataValidator()
         
         # Initialize smoke tester based on preference
@@ -58,8 +61,8 @@ class TestExecutor:
             # Execute test based on category
             if test_case.test_category == "SETUP":
                 if self.use_static_tests:
-                    result = StaticPostgreSQLSmokeTests.test_environment_setup(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_environment_setup(
+                        self.db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
@@ -67,8 +70,8 @@ class TestExecutor:
                     self.smoke_tester.test_environment_setup()
             elif test_case.test_category == "CONFIGURATION":
                 if self.use_static_tests:
-                    result = StaticPostgreSQLSmokeTests.test_configuration_availability(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_configuration_availability(
+                        self.db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
@@ -76,8 +79,8 @@ class TestExecutor:
                     self.smoke_tester.test_dummy_config_availability()
             elif test_case.test_category == "SECURITY":
                 if self.use_static_tests:
-                    result = StaticPostgreSQLSmokeTests.test_environment_credentials(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_environment_credentials(
+                        self.db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
@@ -85,8 +88,8 @@ class TestExecutor:
                     self.smoke_tester.test_environment_credentials()
             elif test_case.test_category == "CONNECTION":
                 if self.use_static_tests:
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_connection(
+                        self.db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
@@ -94,8 +97,8 @@ class TestExecutor:
                     self.smoke_tester.test_postgresql_connection()
             elif test_case.test_category == "QUERIES":
                 if self.use_static_tests:
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_basic_queries(
+                        self.db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
@@ -103,8 +106,8 @@ class TestExecutor:
                     self.smoke_tester.test_postgresql_basic_queries()
             elif test_case.test_category == "PERFORMANCE":
                 if self.use_static_tests:
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_connection_performance(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_connection_performance(
+                        self.db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
@@ -117,8 +120,8 @@ class TestExecutor:
             elif test_case.test_category in ["TABLE_EXISTS", "TABLE_SELECT", "TABLE_ROWS", "TABLE_STRUCTURE"]:
                 # All table-related tests use basic queries for validation
                 if self.use_static_tests:
-                    result = StaticPostgreSQLSmokeTests.test_postgresql_basic_queries(
-                        test_case.environment_name, test_case.application_name
+                    result = StaticDatabaseSmokeTests.test_database_basic_queries(
+                        self.db_type, test_case.environment_name, test_case.application_name
                     )
                     if result["status"] != "PASS":
                         raise Exception(result["message"])
@@ -396,7 +399,7 @@ class TestExecutor:
         Returns:
             dict: Information about available static tests and configuration
         """
-        return StaticPostgreSQLSmokeTests.get_test_info()
+        return StaticDatabaseSmokeTests.get_test_info()
     
     def run_all_static_smoke_tests(self, environment: str = None, application: str = None) -> dict:
         """
@@ -409,4 +412,4 @@ class TestExecutor:
         Returns:
             dict: Comprehensive test results with summary
         """
-        return StaticPostgreSQLSmokeTests.run_all_smoke_tests(environment, application)
+        return StaticDatabaseSmokeTests.run_all_smoke_tests(self.db_type, environment, application)
