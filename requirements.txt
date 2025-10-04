@@ -8,6 +8,7 @@ oracledb
 pyodbc
 psycopg2
 python-dotenv
+openpyxl
 
 # Streamlit Database Configuration Editor Requirements
 streamlit>=1.28.0
